@@ -1,15 +1,13 @@
 package com.example.bookmarket.book.dto;
 
 import com.example.bookmarket.book.entity.Book;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder(toBuilder = true)
 public class BookDTO {
 
     private Long id;
@@ -22,7 +20,12 @@ public class BookDTO {
      * @return 변환된 BookDTO 객체
      */
     public static BookDTO fromEntity(Book book) {
-        return new BookDTO(book.getId(), book.getTitle(), book.getAuthor());
+        return BookDTO.builder()
+                .id(book.getId())
+                .title(book.getTitle())
+                .author(book.getAuthor())
+                .build();
+        // ✅ Builder 방식 : 순서 상관없이 필드 설정 가능, 가독성 높고 안전함
     }
 
     /**

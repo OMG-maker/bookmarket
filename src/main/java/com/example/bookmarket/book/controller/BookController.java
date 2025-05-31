@@ -36,32 +36,21 @@ public class BookController {
     // ID로 책을 조회하는 엔드포인트
     @GetMapping("/{id}")
     public ResponseEntity<BookDTO> getBookById(@PathVariable Long id) {
-        BookDTO book = bookService.findById(id); // ID로 책을 조회
-        if (book != null) {
-            return ResponseEntity.ok(book); // HTTP 200 OK 응답으로 반환
-        } else {
-            return ResponseEntity.notFound().build(); // 책이 존재하지 않으면 HTTP 404 Not Found 응답 반환
-        }
+        BookDTO book = bookService.findById(id); // ID로 책을 조회, 없으면 예외 던짐
+        return ResponseEntity.ok(book); // HTTP 200 OK 응답으로 반환
     }
 
     // ID로 책을 삭제하는 엔드포인트
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteBook(@PathVariable Long id) {
-        if (!bookService.existsById(id)) { // ID로 책이 존재하는지 확인
-            return ResponseEntity.notFound().build(); // 404 반환
-        }
-        bookService.deleteById(id); // ID로 책을 삭제
+        bookService.deleteById(id); // ID로 책을 삭제, 없으면 예외 던짐
         return ResponseEntity.noContent().build(); // 204 반환
     }
 
     // ID로 책을 수정하는 엔드포인트
     @PutMapping("/{id}")
     public ResponseEntity<BookDTO> updateBook(@PathVariable Long id, @RequestBody BookDTO dto) {
-        BookDTO updatedBook = bookService.update(id, dto); // ID로 책을 수정
-        if (updatedBook != null) {
-            return ResponseEntity.ok(updatedBook); // HTTP 200 OK 응답으로 반환
-        } else {
-            return ResponseEntity.notFound().build(); // 책이 존재하지 않으면 HTTP 404 Not Found 응답 반환
-        }
+        BookDTO updatedBook = bookService.update(id, dto); // ID로 사용자를 수정, 없으면 예외 던짐
+        return ResponseEntity.ok(updatedBook); // HTTP 200 OK 응답으로 반환
     }
 }
