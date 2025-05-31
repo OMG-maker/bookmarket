@@ -4,11 +4,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
+@Builder
 @Entity
 @Getter
 @Setter
@@ -23,3 +21,17 @@ public class Book {
     private String author;
 
 }
+
+
+//
+//    Table book {
+//        id integer [primary key]
+//        title varchar [not null]
+//        author varchar [not null]
+//        isbn varchar(20) [unique] // 고유번호
+//        published_at timestamp
+//        stock integer [not null]
+//        price decimal(10, 2) [not null]
+//        is_active boolean [default: true]
+//        status enum('in_stock', 'out_of_stock', 'discontinued') [default: 'in_stock']
+//        }
