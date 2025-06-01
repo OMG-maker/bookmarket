@@ -16,6 +16,8 @@ public class UserDTO {
 
     private String email;
     private String username;
+
+//    @JsonIgnore
     private String password;
 
     private LocalDateTime createdAt;
