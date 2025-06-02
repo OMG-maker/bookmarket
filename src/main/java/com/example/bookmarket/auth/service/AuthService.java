@@ -44,13 +44,13 @@ public class AuthService {
         }
 
         String token = jwtTokenProvider.createToken(user.getUsername(), user.getRole().toString()); // JWT 토큰 생성
-        String refreshToken = jwtTokenProvider.createRefreshToken(user.getUsername());
+        String refreshToken = jwtTokenProvider.createRefreshToken(user.getUsername()); // 리프레시 토큰 생성
 
-        refreshTokenRepository.save(RefreshToken.builder()
-                .userId(user.getUsername())
-                .token(refreshToken)
+        refreshTokenRepository.save(RefreshToken.builder() // 리프레시 토큰 저장
+                .userId(user.getUsername()) // 사용자 ID 설정
+                .token(refreshToken) // 생성된 리프레시 토큰 설정
                 .expiryDate(Instant.now().plusMillis(jwtTokenProvider.refreshTokenValidityInMilliseconds)) // refresh token 유효기간 설정
-                .build());
+                .build()); // 리프레시 토큰 엔티티 빌드 및 저장
 
         return AuthResponseDTO.builder() // 인증 응답 DTO 생성
                 .accessToken(token) // 생성된 토큰 설정

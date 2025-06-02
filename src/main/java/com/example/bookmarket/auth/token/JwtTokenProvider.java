@@ -1,6 +1,7 @@
 package com.example.bookmarket.auth.token;
 
 import io.jsonwebtoken.*;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
@@ -86,5 +87,34 @@ public class JwtTokenProvider {
      */
     public String getSecretKey() {
         return secretKey;
+    }
+
+    /**
+     * JWT 토큰의 만료 시간을 반환합니다.
+     *
+     * @param token JWT 토큰
+     * @return 만료 시간 (밀리초 단위)
+     */
+    public long getExpiration(String token) {
+        return Jwts.parser()
+                .setSigningKey(secretKey)
+                .parseClaimsJws(token)
+                .getBody()
+                .getExpiration()
+                .getTime() - System.currentTimeMillis();
+    }
+
+    /**
+     * HTTP 요청에서 JWT 토큰을 추출합니다.
+     *
+     * @param request HTTP 요청
+     * @return 추출된 JWT 토큰, 없으면 null
+     */
+    public String resolveToken(HttpServletRequest request) {
+        String bearerToken = request.getHeader("Authorization");
+        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7); // "Bearer " 다음의 실제 토큰만 추출
+        }
+        return null;
     }
 }

@@ -4,9 +4,12 @@ import com.example.bookmarket.auth.dto.AuthResponseDTO;
 import com.example.bookmarket.auth.dto.LoginRequestDTO;
 import com.example.bookmarket.auth.dto.SignupRequestDto;
 import com.example.bookmarket.auth.service.AuthService;
+import com.example.bookmarket.auth.token.JwtTokenProvider;
 import com.example.bookmarket.user.dto.UserDTO;
 import com.example.bookmarket.user.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/auth")
@@ -23,9 +27,18 @@ public class AuthController {
     private final AuthService authService;
     private final UserService userService;
 
-    public AuthController(AuthService authService, UserService userService) {
+    private final JwtTokenProvider jwtTokenProvider;
+    private final RedisTemplate<String, String> redisTemplate;
+
+    public AuthController(
+            AuthService authService,
+            UserService userService,
+            JwtTokenProvider jwtTokenProvider,
+            RedisTemplate<String, String> redisTemplate) {
         this.authService = authService;
         this.userService = userService;
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.redisTemplate = redisTemplate;
     }
 
     /**
@@ -39,6 +52,22 @@ public class AuthController {
         return ResponseEntity.ok(response); // HTTP 200 OK 응답으로 반환
     }
 
+    /**
+     * 로그아웃 엔드포인트
+     * @param request HTTP 요청 객체
+     * @return 로그아웃 성공 메시지
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletRequest request) {
+        String token = jwtTokenProvider.resolveToken(request);
+
+        if (token != null && jwtTokenProvider.validateToken(token)) {
+            long expiration = jwtTokenProvider.getExpiration(token);
+            redisTemplate.opsForValue().set("logout:" + token, "true", expiration, TimeUnit.MILLISECONDS);
+        }
+
+        return ResponseEntity.ok("로그아웃 되었습니다.");
+    }
 
     /**
      * 회원가입 엔드포인트
@@ -51,10 +80,12 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(savedUser); // HTTP 201 Created 응답으로 반환
     }
 
+
+
     /**
-     * 로그아웃 엔드포인트
-     * @param request 로그아웃 요청 (토큰 포함)
-     * @return 로그아웃 응답 DTO
+     * 리프레시 토큰을 사용하여 새로운 액세스 토큰을 발급받는 엔드포인트
+     * @param request 리프레시 토큰을 포함한 요청
+     * @return 새로운 액세스 토큰을 포함한 응답 DTO
      */
     @PostMapping("/refresh")
     public ResponseEntity<AuthResponseDTO> refreshToken(@RequestBody Map<String, String> request) {

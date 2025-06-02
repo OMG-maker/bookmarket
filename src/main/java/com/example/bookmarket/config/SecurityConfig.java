@@ -5,8 +5,10 @@ import com.example.bookmarket.auth.exception.CustomAuthenticationEntryPoint;
 import com.example.bookmarket.auth.service.CustomUserDetailsService;
 import com.example.bookmarket.auth.token.JwtAuthenticationFilter;
 import com.example.bookmarket.auth.token.JwtTokenProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -27,6 +29,9 @@ public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomUserDetailsService userDetailsService;
+
+    @Autowired
+    private RedisTemplate<String, String> redisTemplate; // ✅ RedisTemplate 주입
 
     public SecurityConfig(JwtTokenProvider jwtTokenProvider,
                           CustomUserDetailsService userDetailsService) {
@@ -61,11 +66,12 @@ public class SecurityConfig {
                                 "/swagger-ui/index.html",
                                 "/swagger-ui/index.html/**"
                         ).permitAll() // Swagger 관련 API는 모두 접근 허용
+                        .requestMatchers("/", "/index.html", "/css/**", "/js/**").permitAll() // 정적 리소스 접근 허용
                         .requestMatchers("/admin/**").hasRole("ADMIN") // 관리자 API는 ADMIN 역할을 가진 사용자만 접근 가능
                         .requestMatchers("/users/**").hasAnyRole("USER", "ADMIN") // 사용자 API는 USER 또는 ADMIN 역할을 가진 사용자만 접근 가능
                         .anyRequest().authenticated() // 그 외의 모든 요청은 인증된 사용자만 접근 가능
                 )
-                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService), // JWT 인증 필터 추가
+                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService, redisTemplate), // JWT 인증 필터 추가
                         UsernamePasswordAuthenticationFilter.class); // UsernamePasswordAuthenticationFilter 이전에 실행되도록 설정
 
         return http.build(); // SecurityFilterChain 객체 반환

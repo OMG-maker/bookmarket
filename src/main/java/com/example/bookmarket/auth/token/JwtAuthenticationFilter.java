@@ -5,6 +5,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -17,10 +18,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomUserDetailsService userDetailsService;
 
+    private final RedisTemplate<String, String> redisTemplate;
+
     public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider,
-                                   CustomUserDetailsService userDetailsService) {
+                                   CustomUserDetailsService userDetailsService,
+                                   RedisTemplate<String, String> redisTemplate) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.userDetailsService = userDetailsService;
+        this.redisTemplate = redisTemplate;
     }
 
     /**
@@ -44,16 +49,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (header != null && header.startsWith("Bearer ")) { // 토큰이 존재하고 "Bearer "로 시작하는지 확인
             String token = header.substring(7); // "Bearer " 이후의 토큰 부분만 추출
-            if (jwtTokenProvider.validateToken(token)) { // 토큰 유효성 검사
-                String username = jwtTokenProvider.getUsername(token); // 토큰에서 사용자 이름 추출
 
-                var userDetails = userDetailsService.loadUserByUsername(username); // 사용자 정보 로드
-                var auth = new UsernamePasswordAuthenticationToken( // 인증 객체 생성
-                        userDetails, null, userDetails.getAuthorities()); // 권한 정보 포함
+            // 🔐 Redis에 블랙리스트로 등록된 토큰인지 확인
+            String isLoggedOut = redisTemplate.opsForValue().get("logout:" + token);
 
-                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request)); // 인증 객체에 요청 세부 정보 추가
+            if (isLoggedOut != null) {
+                // 이미 로그아웃된 토큰인 경우
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"error\": \"Token is invalid (logged out)\"}");
+                return;
+            }
 
-                SecurityContextHolder.getContext().setAuthentication(auth); // 인증 정보를 SecurityContext에 저장
+            if (jwtTokenProvider.validateToken(token)) {
+                String username = jwtTokenProvider.getUsername(token);
+
+                var userDetails = userDetailsService.loadUserByUsername(username);
+                var auth = new UsernamePasswordAuthenticationToken(
+                        userDetails, null, userDetails.getAuthorities());
+                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(auth);
             }
         }
 
