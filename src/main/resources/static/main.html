@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>북마켓 - 메인</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .response {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        .error {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+        .user-list {
+            margin-top: 20px;
+        }
+        .user-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .user-item:last-child {
+            border-bottom: none;
+        }
+        .login-prompt {
+            text-align: center;
+            margin-top: 50px;
+        }
+        .login-prompt a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+        .login-prompt a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>북마켓</h1>
+            <div class="user-info">
+                <span id="userEmail"></span>
+                <button id="logoutBtn">로그아웃</button>
+            </div>
+        </div>
+        <div id="mainContent">
+            <div id="userList" class="user-list">
+                <!-- 사용자 목록이 여기에 동적으로 추가됩니다 -->
+            </div>
+            <div id="loginPrompt" class="login-prompt" style="display: none;">
+                <h2>로그인이 필요합니다</h2>
+                <p>사용자 목록을 보려면 <a href="/index.html">로그인</a>해주세요.</p>
+            </div>
+        </div>
+        <div id="response" class="response"></div>
+    </div>
+
+    <script>
+        // 사용자 목록 가져오기
+        async function fetchUsers() {
+            const token = localStorage.getItem('accessToken');
+            if (!token) {
+                document.getElementById('userList').style.display = 'none';
+                document.getElementById('loginPrompt').style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch('/users', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const users = await response.json();
+                    const userListDiv = document.getElementById('userList');
+                    userListDiv.innerHTML = '<h2>사용자 목록</h2>';
+                    
+                    users.forEach(user => {
+                        const userDiv = document.createElement('div');
+                        userDiv.className = 'user-item';
+                        userDiv.innerHTML = `
+                            <strong>이메일:</strong> ${user.email}<br>
+                            <strong>사용자명:</strong> ${user.username}
+                        `;
+                        userListDiv.appendChild(userDiv);
+                    });
+                    
+                    document.getElementById('userList').style.display = 'block';
+                    document.getElementById('loginPrompt').style.display = 'none';
+                } else {
+                    throw new Error('사용자 목록을 가져오는데 실패했습니다.');
+                }
+            } catch (error) {
+                document.getElementById('response').className = 'response error';
+                document.getElementById('response').textContent = '오류가 발생했습니다: ' + error.message;
+                document.getElementById('userList').style.display = 'none';
+                document.getElementById('loginPrompt').style.display = 'block';
+            }
+        }
+
+        // 페이지 로드 시 사용자 목록 가져오기
+        window.addEventListener('load', () => {
+            const token = localStorage.getItem('accessToken');
+            if (token) {
+                document.getElementById('userEmail').textContent = localStorage.getItem('userEmail');
+            }
+            fetchUsers();
+        });
+
+        // 로그아웃 처리
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            const token = localStorage.getItem('accessToken');
+            if (!token) {
+                window.location.href = '/index.html';
+                return;
+            }
+
+            try {
+                const response = await fetch('/auth/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    // 로컬 스토리지 초기화
+                    localStorage.removeItem('accessToken');
+                    localStorage.removeItem('refreshToken');
+                    localStorage.removeItem('userEmail');
+                    
+                    // 페이지 새로고침
+                    window.location.reload();
+                } else {
+                    const data = await response.json();
+                    document.getElementById('response').className = 'response error';
+                    document.getElementById('response').textContent = data.message || '로그아웃 실패';
+                }
+            } catch (error) {
+                document.getElementById('response').className = 'response error';
+                document.getElementById('response').textContent = '오류가 발생했습니다: ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html> 
