@@ -3,9 +3,12 @@ package com.example.bookmarket.auth.service;
 import com.example.bookmarket.auth.dto.AuthResponseDTO;
 import com.example.bookmarket.auth.dto.LoginRequestDTO;
 import com.example.bookmarket.auth.entity.RefreshToken;
+import com.example.bookmarket.auth.exception.*;
 import com.example.bookmarket.auth.repository.RefreshTokenRepository;
 import com.example.bookmarket.auth.token.JwtTokenProvider;
+import com.example.bookmarket.common.ErrorMessages;
 import com.example.bookmarket.user.entity.User;
+import com.example.bookmarket.user.exception.UserNotFoundException;
 import com.example.bookmarket.user.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -37,10 +40,10 @@ public class AuthService {
      */
     public AuthResponseDTO login(LoginRequestDTO loginRequest) {
         User user = userRepository.findByEmail(loginRequest.getEmail()) // 이메일로 사용자 조회
-                .orElseThrow(() -> new RuntimeException("사용자 없음")); // 사용자가 존재하지 않으면 예외 발생
+                .orElseThrow(() -> new UserNotFoundException(ErrorMessages.EMAIL_NOT_FOUND)); // 사용자가 존재하지 않으면 예외 발생
 
         if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) { // 입력된 비밀번호와 저장된 비밀번호 비교
-            throw new RuntimeException("비밀번호가 올바르지 않습니다."); // 비밀번호가 일치하지 않으면 예외 발생
+            throw new InvalidPasswordException(ErrorMessages.INVALID_PASSWORD);
         }
 
         String token = jwtTokenProvider.createToken(user.getUsername(), user.getRole().toString()); // JWT 토큰 생성
@@ -64,25 +67,25 @@ public class AuthService {
     public AuthResponseDTO refreshAccessToken(String refreshToken) {
         // 토큰 유효성 검사
         if (!jwtTokenProvider.validateToken(refreshToken)) {
-            throw new RuntimeException("Refresh Token이 유효하지 않습니다.");
+            throw new InvalidRefreshTokenException(ErrorMessages.REFRESH_TOKEN_INVALID);
         }
 
         String username = jwtTokenProvider.getUsername(refreshToken);
 
         RefreshToken storedToken = refreshTokenRepository.findById(username)
-                .orElseThrow(() -> new RuntimeException("Refresh Token이 존재하지 않습니다."));
+                .orElseThrow(() -> new RefreshTokenNotFoundException(ErrorMessages.REFRESH_TOKEN_NOT_FOUND));
 
         if (!storedToken.getToken().equals(refreshToken)) {
-            throw new RuntimeException("Refresh Token이 일치하지 않습니다.");
+            throw new RefreshTokenMismatchException(ErrorMessages.REFRESH_TOKEN_MISMATCH);
         }
 
         if (storedToken.getExpiryDate().isBefore(Instant.now())) {
-            throw new RuntimeException("Refresh Token이 만료되었습니다.");
+            throw new RefreshTokenExpiredException(ErrorMessages.REFRESH_TOKEN_EXPIRED);
         }
 
         // 사용자 엔티티 조회, 없으면 예외 던짐
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new UserNotFoundException(ErrorMessages.USERNAME_NOT_FOUND));
 
         // 새로운 Access Token 생성
         String newAccessToken = jwtTokenProvider.createToken(username, user.getRole().toString());
