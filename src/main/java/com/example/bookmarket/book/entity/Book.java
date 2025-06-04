@@ -23,7 +23,6 @@ public class Book {
 
 }
 
-
 //
 //    Table book {
 //        id integer [primary key]

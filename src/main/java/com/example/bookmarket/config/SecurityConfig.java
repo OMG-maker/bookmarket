@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -58,7 +59,8 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth // 요청 권한 설정
                         .requestMatchers("/auth/**").permitAll() // 로그인, 회원가입 등 공개 API는 인증 없이 접근 허용
-                        .requestMatchers("/books/**").permitAll() // 책 관련 API는 모두 접근 허용
+//                        .requestMatchers("/books/**").permitAll() // 책 관련 API는 모두 접근 허용
+                        .requestMatchers(HttpMethod.GET, "/books/**").permitAll() // ✅ 조회만 공개
                         .requestMatchers(
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
