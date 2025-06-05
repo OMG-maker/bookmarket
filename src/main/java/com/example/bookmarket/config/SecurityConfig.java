@@ -71,6 +71,7 @@ public class SecurityConfig {
                         .requestMatchers("/", "/index.html", "/main.html", "/css/**", "/js/**").permitAll() // 정적 리소스 접근 허용
                         .requestMatchers("/admin/**").hasRole("ADMIN") // 관리자 API는 ADMIN 역할을 가진 사용자만 접근 가능
                         .requestMatchers("/users/**").hasAnyRole("USER", "ADMIN") // 사용자 API는 USER 또는 ADMIN 역할을 가진 사용자만 접근 가능
+                        .requestMatchers("/carts/**").hasAnyRole("USER", "ADMIN") // 장바구니 API는 USER 또는 ADMIN 역할을 가진 사용자만 접근 가능
                         .anyRequest().authenticated() // 그 외의 모든 요청은 인증된 사용자만 접근 가능
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService, redisTemplate), // JWT 인증 필터 추가
