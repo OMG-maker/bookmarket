@@ -23,6 +23,8 @@ public class UserDTO {
     private LocalDateTime createdAt;
 
     private User.Role role;
+
+    @Builder.Default
     private Boolean isActive = true;
 
     /**

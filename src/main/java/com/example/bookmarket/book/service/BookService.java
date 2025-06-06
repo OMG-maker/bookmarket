@@ -94,10 +94,17 @@ public class BookService {
 //                .toList();
 //    }
 
+//    // 제목과 저자 이름으로 책을 페이지 단위로 검색하는 메소드
+//    public Page<BookDTO> searchBooks(String title, String author, Pageable pageable) {
+//        return bookRepositoryCustom
+//                .searchBooks(title, author, pageable)
+//                .map(BookDTO::fromEntity);
+//    }
+
     // 제목과 저자 이름으로 책을 페이지 단위로 검색하는 메소드
     public Page<BookDTO> searchBooks(String title, String author, Pageable pageable) {
         return bookRepository
-                .searchBooks(title, author, pageable)
+                .searchBooks(title, author, pageable)  // 👉 BookRepositoryImpl의 QueryDSL 메소드 호출됨
                 .map(BookDTO::fromEntity);
     }
 
@@ -105,6 +112,5 @@ public class BookService {
     public boolean existsById(Long id) {
         return bookRepository.existsById(id);
     }
-
 
 }

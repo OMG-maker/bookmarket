@@ -36,6 +36,7 @@ public class Book {
     private BigDecimal price;
 
     @Column(nullable = false)
+    @Builder.Default
     private Boolean isActive = true;
 
     @Enumerated(EnumType.STRING)
