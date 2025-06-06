@@ -83,4 +83,41 @@ public class CartService {
 
         return CartResponseDTO.fromEntity(cart);
     }
+
+    @Transactional
+    public void updateCartBookQuantity(Long userId, Long bookId, int quantity) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND));
+
+        Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new BookNotFoundException(BOOK_NOT_FOUND));
+
+        Cart cart = cartRepository.findByUserAndStatus(user, Cart.Status.PENDING)
+                .orElseThrow(() -> new IllegalStateException("Cart not found for user"));
+
+        CartBook cartBook = cartBookRepository.findByCartAndBook(cart, book)
+                .orElseThrow(() -> new IllegalStateException("Book not found in cart"));
+
+        // 수량 업데이트
+        cartBook.setQuantity(quantity);
+    }
+
+    @Transactional
+    public void removeBookFromCart(Long userId, Long bookId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND));
+
+        Book book = bookRepository.findById(bookId)
+                .orElseThrow(() -> new BookNotFoundException(BOOK_NOT_FOUND));
+
+        Cart cart = cartRepository.findByUserAndStatus(user, Cart.Status.PENDING)
+                .orElseThrow(() -> new IllegalStateException("Cart not found for user"));
+
+        CartBook cartBook = cartBookRepository.findByCartAndBook(cart, book)
+                .orElseThrow(() -> new IllegalStateException("Book not found in cart"));
+
+        cartBookRepository.delete(cartBook);
+    }
+
+
 }
