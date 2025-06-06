@@ -69,16 +69,15 @@ public class BookService {
         // 수정된 결과를 BookDTO로 변환하여 반환
         return BookDTO.fromEntity(bookRepository.save(book.toBuilder() // toBuilder()를 사용해서 기존 user를 복사하면서 변경
                 .title(dto.getTitle()) // 사용자 이름 수정
-                .author(dto.getAuthor()) // 비밀번호 수정
                 .author(dto.getAuthor()) // 설명 수정
-//                .isbn(dto.getIsbn()) // 가격 수정
-//                .publishedAt(dto.getPublishedAt()) // 이미지 URL 수정
-//                .stock(dto.getStock()) // 재고 수정
-//                .price(dto.getPrice()) // 가격 수정
-////                .isActive(dto.getIsActive()) // 활성화 여부 수정
-////                .status(dto.getStatus()) // 상태 수정
-//                .isActive(dto.getIsActive() != null ? dto.getIsActive() : book.getIsActive())
-//                .status(dto.getStatus() != null ? dto.getStatus() : book.getStatus())
+                .isbn(dto.getIsbn()) // 가격 수정
+                .publishedAt(dto.getPublishedAt()) // 이미지 URL 수정
+                .stock(dto.getStock()) // 재고 수정
+                .price(dto.getPrice()) // 가격 수정
+//                .isActive(dto.getIsActive()) // 활성화 여부 수정
+//                .status(dto.getStatus()) // 상태 수정
+                .isActive(dto.getIsActive() != null ? dto.getIsActive() : book.getIsActive())
+                .status(dto.getStatus() != null ? dto.getStatus() : book.getStatus())
                 .build()
         ));
     }
@@ -98,7 +97,7 @@ public class BookService {
     // 제목과 저자 이름으로 책을 페이지 단위로 검색하는 메소드
     public Page<BookDTO> searchBooks(String title, String author, Pageable pageable) {
         return bookRepository
-                .findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(title, author, pageable)
+                .searchBooks(title, author, pageable)
                 .map(BookDTO::fromEntity);
     }
 
