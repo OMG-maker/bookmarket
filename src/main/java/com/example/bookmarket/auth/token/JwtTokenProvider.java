@@ -19,12 +19,12 @@ public class JwtTokenProvider {
     /**
      * JWT 토큰을 생성합니다.
      *
-     * @param username 사용자 이름
+     * @param email 사용자 이메일
      * @param role 사용자 역할 (예: USER, ADMIN)
      * @return 생성된 JWT 토큰
      */
-    public String createToken(String username, String role) {
-        Claims claims = Jwts.claims().setSubject(username); // 사용자 이름을 클레임에 설정
+    public String createToken(String email, String role) {
+        Claims claims = Jwts.claims().setSubject(email); // 사용자 이름을 클레임에 설정
         claims.put("role", role); // 사용자 역할을 클레임에 추가
         Date now = new Date(); // 현재 시간
         Date validity = new Date(now.getTime() + validityInMilliseconds); // 토큰 유효 기간 설정
@@ -55,11 +55,11 @@ public class JwtTokenProvider {
     /**
      * 리프레시 토큰을 생성합니다.
      *
-     * @param username 사용자 이름
+     * @param email 사용자 이름
      * @return 생성된 리프레시 토큰
      */
-    public String createRefreshToken(String username) {
-        Claims claims = Jwts.claims().setSubject(username);
+    public String createRefreshToken(String email) {
+        Claims claims = Jwts.claims().setSubject(email);
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + refreshTokenValidityInMilliseconds);
 

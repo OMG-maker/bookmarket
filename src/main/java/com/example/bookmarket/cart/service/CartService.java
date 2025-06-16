@@ -35,6 +35,13 @@ public class CartService {
         this.cartBookRepository = cartBookRepository;
     }
 
+    /**
+     * 카트에 책을 추가합니다.
+     *
+     * @param userId    사용자 ID
+     * @param bookId    책 ID
+     * @param quantity  추가할 수량
+     */
     @Transactional
     public void addBookToCart(Long userId, Long bookId, int quantity) {
         User user = userRepository.findById(userId)
@@ -67,11 +74,19 @@ public class CartService {
         }
     }
 
+    /**
+     * 유저의 장바구니를 조회합니다.
+     *
+     * @param userId 유저 ID
+     * @return 장바구니 정보
+     */
     @Transactional
     public CartResponseDTO getCartByUserId(Long userId) {
+        // 1. 유저 정보 조회
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND));
 
+        // 2. 해당 유저의 PENDING 상태 카트 조회
         Cart cart = cartRepository.findByUserAndStatus(user, Cart.Status.PENDING)
                 .orElseGet(() -> Cart.builder() // orElseGet : 값이 없을 경우, 대체 값을 "지연 실행(lazy)"으로 생성해서 리턴.
                                                     // 🔹 언제 쓰나?
@@ -84,6 +99,13 @@ public class CartService {
         return CartResponseDTO.fromEntity(cart);
     }
 
+    /**
+     * 카트에 책을 추가합니다.
+     *
+     * @param userId    사용자 ID
+     * @param bookId    책 ID
+     * @param quantity  추가할 수량
+     */
     @Transactional
     public void updateCartBookQuantity(Long userId, Long bookId, int quantity) {
         User user = userRepository.findById(userId)
@@ -102,6 +124,12 @@ public class CartService {
         cartBook.setQuantity(quantity);
     }
 
+    /**
+     * 카트에서 책을 제거합니다.
+     *
+     * @param userId    사용자 ID
+     * @param bookId    책 ID
+     */
     @Transactional
     public void removeBookFromCart(Long userId, Long bookId) {
         User user = userRepository.findById(userId)
@@ -116,6 +144,7 @@ public class CartService {
         CartBook cartBook = cartBookRepository.findByCartAndBook(cart, book)
                 .orElseThrow(() -> new IllegalStateException("Book not found in cart"));
 
+        // 카트에서 책 제거
         cartBookRepository.delete(cartBook);
     }
 

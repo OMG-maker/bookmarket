@@ -82,25 +82,6 @@ public class BookService {
         ));
     }
 
-//    // 제목과 저자 이름으로 책을 검색하는 메소드
-//    public List<BookDTO> searchBooks(String title, String author) {
-//        // 기본값 처리: null일 경우 빈 문자열로
-//        String safeTitle = (title == null) ? "" : title;
-//        String safeAuthor = (author == null) ? "" : author;
-//
-//        return bookRepository.findByTitleAndAuthorContainingIgnoreCase(safeTitle, safeAuthor)
-//                .stream()
-//                .map(BookDTO::fromEntity)
-//                .toList();
-//    }
-
-//    // 제목과 저자 이름으로 책을 페이지 단위로 검색하는 메소드
-//    public Page<BookDTO> searchBooks(String title, String author, Pageable pageable) {
-//        return bookRepositoryCustom
-//                .searchBooks(title, author, pageable)
-//                .map(BookDTO::fromEntity);
-//    }
-
     // 제목과 저자 이름으로 책을 페이지 단위로 검색하는 메소드
     public Page<BookDTO> searchBooks(String title, String author, Pageable pageable) {
         return bookRepository

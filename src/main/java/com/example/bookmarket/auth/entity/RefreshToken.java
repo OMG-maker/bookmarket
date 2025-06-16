@@ -16,7 +16,7 @@ import java.time.Instant;
 @Builder(toBuilder = true)
 public class RefreshToken {
     @Id
-    private String userId; // User ID (또는 username)
+    private String userId; // 👈 실제로는 email 저장
 
     @Column(nullable = false)
     private String token; // 실제 refresh token 값

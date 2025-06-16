@@ -44,17 +44,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
+        System.out.println("===== JwtAuthenticationFilter: Filtering request =====");
 
         String header = request.getHeader("Authorization"); // 요청 헤더에서 Authorization 토큰 추출
 
         if (header != null && header.startsWith("Bearer ")) { // 토큰이 존재하고 "Bearer "로 시작하는지 확인
             String token = header.substring(7); // "Bearer " 이후의 토큰 부분만 추출
+            System.out.println("Extracted Token: " + token);
 
             // 🔐 Redis에 블랙리스트로 등록된 토큰인지 확인
             String isLoggedOut = redisTemplate.opsForValue().get("logout:" + token);
 
             if (isLoggedOut != null) {
                 // 이미 로그아웃된 토큰인 경우
+                System.out.println("Token is blacklisted");
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 response.setContentType("application/json");
                 response.getWriter().write("{\"error\": \"Token is invalid (logged out)\"}");
@@ -62,14 +65,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
             if (jwtTokenProvider.validateToken(token)) {
-                String username = jwtTokenProvider.getUsername(token);
+                String email = jwtTokenProvider.getUsername(token);
+                System.out.println("[JwtAuthFilter] Valid token for email: " + email);
 
-                var userDetails = userDetailsService.loadUserByUsername(username);
+                var userDetails = userDetailsService.loadUserByUsername(email);
+                System.out.println("[JwtAuthFilter] Loaded UserDetails: " + userDetails.getUsername());
+
                 var auth = new UsernamePasswordAuthenticationToken(
                         userDetails, null, userDetails.getAuthorities());
+
                 auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
                 SecurityContextHolder.getContext().setAuthentication(auth);
+                System.out.println("[JwtAuthFilter] Authentication set in SecurityContext");
             }
+            else {
+                System.out.println("[JwtAuthFilter] Invalid token");
+            }
+        }
+        else {
+            System.out.println("No Authorization header or does not start with Bearer");
         }
 
         filterChain.doFilter(request, response); // 다음 필터 또는 리소스로 요청 전달

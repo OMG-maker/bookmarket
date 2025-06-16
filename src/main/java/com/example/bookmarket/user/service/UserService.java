@@ -46,7 +46,7 @@ public class UserService {
 
     // 사용자를 저장하는 메소드 (관리자용)
     public UserDTO save(UserDTO dto) {
-        // username 중복 체크
+        // email 중복 체크
         userRepository.findByEmail(dto.getEmail()).ifPresent(user -> { // 이메일로 중복된 사용자가 있는지 확인
             throw new UserAlreadyExistsException(USER_ALREADY_EXISTS); // 중복된 사용자가 있으면 예외 발생
         });

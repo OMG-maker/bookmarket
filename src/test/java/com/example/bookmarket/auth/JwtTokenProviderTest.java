@@ -26,15 +26,25 @@ public class JwtTokenProviderTest {
      */
     @Test
     public void testGenerateAndValidateToken() {
-        String username = "testuser";
+//        String username = "testuser";
+//        String role = User.Role.USER.name();
+//
+//        String token = jwtTokenProvider.createToken(username, role);
+//
+//        assertTrue(jwtTokenProvider.validateToken(token));
+//
+//        String extractedUsername = jwtTokenProvider.getUsername(token);
+//        assertEquals(username, extractedUsername);
+
+        String email = "testuser@example.com"; // 이메일로 변경
         String role = User.Role.USER.name();
 
-        String token = jwtTokenProvider.createToken(username, role);
+        String token = jwtTokenProvider.createToken(email, role);
 
         assertTrue(jwtTokenProvider.validateToken(token));
 
-        String extractedUsername = jwtTokenProvider.getUsername(token);
-        assertEquals(username, extractedUsername);
+        String extractedEmail = jwtTokenProvider.getUsername(token);
+        assertEquals(email, extractedEmail);
     }
 
     /**
