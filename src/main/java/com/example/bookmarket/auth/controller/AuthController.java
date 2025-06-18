@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static com.example.bookmarket.common.ResponseMessage.LOGOUT_SUCCESS;
+
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
@@ -66,7 +68,7 @@ public class AuthController {
             redisTemplate.opsForValue().set("logout:" + token, "true", expiration, TimeUnit.MILLISECONDS);
         }
 
-        return ResponseEntity.ok("로그아웃 되었습니다.");
+        return ResponseEntity.ok(LOGOUT_SUCCESS);
     }
 
     /**

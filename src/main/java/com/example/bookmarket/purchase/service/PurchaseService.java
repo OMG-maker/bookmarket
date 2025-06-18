@@ -4,10 +4,15 @@ package com.example.bookmarket.purchase.service;
 import com.example.bookmarket.book.entity.Book;
 import com.example.bookmarket.book.repository.BookRepository;
 import com.example.bookmarket.cart.entity.Cart;
+import com.example.bookmarket.cart.exception.CartEmptyException;
+import com.example.bookmarket.cart.exception.CartNotFoundException;
 import com.example.bookmarket.cart.repository.CartRepository;
 import com.example.bookmarket.cartBook.entity.CartBook;
 import com.example.bookmarket.cartBook.repository.CartBookRepository;
 import com.example.bookmarket.purchase.entity.Purchase;
+import com.example.bookmarket.purchase.exception.InsufficientStockException;
+import com.example.bookmarket.purchase.exception.PaymentFailedException;
+import com.example.bookmarket.purchase.exception.TotalPriceInvalidException;
 import com.example.bookmarket.purchase.repository.PurchaseRepository;
 import com.example.bookmarket.purchaseBook.entity.PurchaseBook;
 import com.example.bookmarket.user.entity.User;
@@ -25,7 +30,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.example.bookmarket.common.ErrorMessages.USER_NOT_FOUND;
+import static com.example.bookmarket.common.ErrorMessages.*;
 
 @Service
 @RequiredArgsConstructor
@@ -96,11 +101,12 @@ public class PurchaseService {
     public Long createPurchase(String userEmail) {
         // 1. 인증된 유저 찾기
         User currentUser = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("User not found: " + userEmail));
+//                .orElseThrow(() -> new RuntimeException("User not found: " + userEmail));
+                .orElseThrow(() -> new UserNotFoundException(EMAIL_NOT_FOUND));
 
         // 2. 유저의 현재 Cart 찾기
         Cart cart = cartRepository.findByUserAndStatus(currentUser, Cart.Status.PENDING)
-                .orElseThrow(() -> new RuntimeException("Pending cart not found for user: " + userEmail));
+                .orElseThrow(() -> new CartNotFoundException(CART_NOT_FOUND));
 
         // 3. Purchase 엔티티 생성 (초기 상태 ACTIVE)
         Purchase purchase = Purchase.builder()
@@ -113,7 +119,7 @@ public class PurchaseService {
         List<CartBook> cartBooks = cartBookRepository.findByCart(cart);
 
         if (cartBooks.isEmpty()) {
-            throw new RuntimeException("Cart is empty.");
+            throw new CartEmptyException(CART_EMPTY);
         }
 
         List<PurchaseBook> purchaseBooks = new ArrayList<>();
@@ -125,7 +131,7 @@ public class PurchaseService {
 
             // 재고 확인 및 감소
             if (book.getStock() < quantity) {
-                throw new RuntimeException("Insufficient stock for book: " + book.getTitle());
+                throw new InsufficientStockException(INSUFFICIENT_STOCK + ": " + book.getTitle());
             }
             book.setStock(book.getStock() - quantity);
 
@@ -150,7 +156,7 @@ public class PurchaseService {
         boolean paymentSuccess = fakePaymentProcessing(totalPrice);
 
         if (!paymentSuccess) {
-            throw new RuntimeException("Payment failed.");
+            throw new PaymentFailedException(PAYMENT_FAILED);
         }
 
         // 7. 결제 성공 시 상태 변경
@@ -175,7 +181,7 @@ public class PurchaseService {
     private boolean fakePaymentProcessing(BigDecimal totalPrice) {
         // 실제 결제 시스템 연동 자리, 임시 성공 처리
         if (totalPrice.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new RuntimeException("Total price must be greater than zero.");
+            throw new TotalPriceInvalidException(TOTAL_PRICE_SMALL_THAN_ZERO);
         }
 
         return true;

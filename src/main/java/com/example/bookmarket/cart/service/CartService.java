@@ -5,6 +5,8 @@ import com.example.bookmarket.book.exception.BookNotFoundException;
 import com.example.bookmarket.book.repository.BookRepository;
 import com.example.bookmarket.cart.dto.CartResponseDTO;
 import com.example.bookmarket.cart.entity.Cart;
+import com.example.bookmarket.cart.exception.CartBookNotFoundException;
+import com.example.bookmarket.cart.exception.CartNotFoundException;
 import com.example.bookmarket.cart.repository.CartRepository;
 import com.example.bookmarket.cartBook.entity.CartBook;
 import com.example.bookmarket.cartBook.repository.CartBookRepository;
@@ -17,8 +19,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Optional;
 
-import static com.example.bookmarket.common.ErrorMessages.BOOK_NOT_FOUND;
-import static com.example.bookmarket.common.ErrorMessages.USER_NOT_FOUND;
+import static com.example.bookmarket.common.ErrorMessages.*;
 
 @Service
 public class CartService {
@@ -115,10 +116,10 @@ public class CartService {
                 .orElseThrow(() -> new BookNotFoundException(BOOK_NOT_FOUND));
 
         Cart cart = cartRepository.findByUserAndStatus(user, Cart.Status.PENDING)
-                .orElseThrow(() -> new IllegalStateException("Cart not found for user"));
+                .orElseThrow(() -> new CartNotFoundException(CART_NOT_FOUND));
 
         CartBook cartBook = cartBookRepository.findByCartAndBook(cart, book)
-                .orElseThrow(() -> new IllegalStateException("Book not found in cart"));
+                .orElseThrow(() -> new CartBookNotFoundException(CART_BOOK_NOT_FOUND));
 
         // 수량 업데이트
         cartBook.setQuantity(quantity);
@@ -139,10 +140,10 @@ public class CartService {
                 .orElseThrow(() -> new BookNotFoundException(BOOK_NOT_FOUND));
 
         Cart cart = cartRepository.findByUserAndStatus(user, Cart.Status.PENDING)
-                .orElseThrow(() -> new IllegalStateException("Cart not found for user"));
+                .orElseThrow(() -> new CartNotFoundException(CART_NOT_FOUND));
 
         CartBook cartBook = cartBookRepository.findByCartAndBook(cart, book)
-                .orElseThrow(() -> new IllegalStateException("Book not found in cart"));
+                .orElseThrow(() -> new CartBookNotFoundException(CART_BOOK_NOT_FOUND));
 
         // 카트에서 책 제거
         cartBookRepository.delete(cartBook);

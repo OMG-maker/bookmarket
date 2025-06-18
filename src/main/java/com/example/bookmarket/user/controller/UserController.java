@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import static com.example.bookmarket.common.ResponseMessage.PAGE_FOR_USER_AND_ADMIN;
+
 @RestController
 @RequestMapping("/users")
 public class UserController {
@@ -22,7 +24,7 @@ public class UserController {
     @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping("/mypage")
     public ResponseEntity<String> userOrAdmin() {
-        return ResponseEntity.ok("회원 또는 관리자 접근 가능 페이지입니다.");
+        return ResponseEntity.ok(PAGE_FOR_USER_AND_ADMIN);
     }
 
     // 사용자를 생성하는 엔드포인트 (관리자 전용)

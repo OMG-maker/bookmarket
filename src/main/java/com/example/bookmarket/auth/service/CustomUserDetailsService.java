@@ -7,6 +7,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import static com.example.bookmarket.common.ErrorMessages.EMAIL_NOT_FOUND;
+
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
     private final UserRepository userRepository;
@@ -43,7 +45,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String email) { // 'username' = email로 동작
         User user = userRepository.findByEmail(email)    // email로 실제 조회
-                .orElseThrow(() -> new UsernameNotFoundException("사용자 없음"));
+                .orElseThrow(() -> new UsernameNotFoundException(EMAIL_NOT_FOUND));
 
         return org.springframework.security.core.userdetails.User
                 .withUsername(user.getEmail()) // email을 'username' 위치에 넣음 (principal 값)
