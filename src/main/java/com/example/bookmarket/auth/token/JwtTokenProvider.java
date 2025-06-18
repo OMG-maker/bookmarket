@@ -1,5 +1,6 @@
 package com.example.bookmarket.auth.token;
 
+import org.springframework.beans.factory.annotation.Value;
 import io.jsonwebtoken.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Component;
@@ -9,12 +10,23 @@ import java.util.Date;
 @Component
 public class JwtTokenProvider {
 
-    private final String secretKey = "your-secret-key"; // 나중에 application.properties에서 관리
-    private final long validityInMilliseconds = 3600000; // 1시간
-//    private final long validityInMilliseconds = 15000; // 5초
+//    private final String secretKey = "your-secret-key"; // 나중에 application.properties에서 관리
+    @Value("${jwt.secret}")
+    private String secretKey;
 
-    // 만료 시간 예시: 7일
-    public final long refreshTokenValidityInMilliseconds = 7 * 24 * 60 * 60 * 1000;
+    // JWT 토큰의 유효 기간 (밀리초 단위)
+    @Value("${jwt.access-token-validity}")
+    private final long validityInMilliseconds;
+
+    // 리프레시 토큰의 유효 기간 (밀리초 단위)
+    @Value("${jwt.refresh-token-validity}")
+    public final long refreshTokenValidityInMilliseconds;
+
+    public JwtTokenProvider(@Value("${jwt.access-token-validity}") long validityInMilliseconds,
+                            @Value("${jwt.refresh-token-validity}") long refreshTokenValidityInMilliseconds) {
+        this.validityInMilliseconds = validityInMilliseconds;
+        this.refreshTokenValidityInMilliseconds = refreshTokenValidityInMilliseconds;
+    }
 
     /**
      * JWT 토큰을 생성합니다.
