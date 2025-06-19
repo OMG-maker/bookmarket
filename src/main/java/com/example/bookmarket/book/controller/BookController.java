@@ -67,6 +67,7 @@ public class BookController {
 //        return ResponseEntity.ok(result);
 //    }
 
+    // 페이지 추가
     @GetMapping("/search")
     public ResponseEntity<Page<BookDTO>> searchBooks(
             @RequestParam(defaultValue = "") String title,

@@ -12,8 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-import static com.example.bookmarket.common.ErrorMessages.USER_ALREADY_EXISTS;
-import static com.example.bookmarket.common.ErrorMessages.USER_NOT_FOUND;
+import static com.example.bookmarket.common.ErrorMessages.*;
 
 @Service
 @EnableWebSecurity
@@ -41,6 +40,14 @@ public class UserService {
         // 해당 id의 유저가 없으면 즉시 예외 발생하는 방식으로 변경
         User user = userRepository.findById(id) // ID로 사용자 엔티티를 조회
                 .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND)); // 만약 사용자가 존재하지 않으면 에러 반환
+        return UserDTO.fromEntity(user); // 조회된 User 엔티티를 UserDTO로 변환
+    }
+
+    // email로 사용자를 조회하는 메소드
+    public UserDTO findByEmail(String email) {
+        // 해당 id의 유저가 없으면 즉시 예외 발생하는 방식으로 변경
+        User user = userRepository.findByEmail(email) // ID로 사용자 엔티티를 조회
+                .orElseThrow(() -> new UserNotFoundException(EMAIL_NOT_FOUND)); // 만약 사용자가 존재하지 않으면 에러 반환
         return UserDTO.fromEntity(user); // 조회된 User 엔티티를 UserDTO로 변환
     }
 

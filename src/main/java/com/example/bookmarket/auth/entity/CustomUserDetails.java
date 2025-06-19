@@ -1,32 +1,5 @@
 package com.example.bookmarket.auth.entity;
 
-//public class CustomUserDetails implements UserDetails {
-//
-//    private final User user;
-//
-//    // 생성자
-//    public CustomUserDetails(User user) {
-//        this.user = user;
-//    }
-//
-//    @Override
-//    public Collection<? extends GrantedAuthority> getAuthorities() {
-//        return null;
-//    }
-//
-//    @Override
-//    public String getPassword() {
-//        return null;
-//    }
-//
-//    @Override
-//    public String getUsername() {
-//        return user.getEmail();
-//    }
-//
-//    // 기타 메소드 생략
-//}
-
 import com.example.bookmarket.user.entity.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -42,10 +15,6 @@ public class CustomUserDetails implements UserDetails {
     public CustomUserDetails(User user) {
         this.user = user;
     }
-
-//    public String getUsername() {
-//        return user.getEmail();
-//    }
 
     // 필수 오버라이드
     @Override

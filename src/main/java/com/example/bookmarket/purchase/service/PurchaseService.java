@@ -131,7 +131,7 @@ public class PurchaseService {
 
             // 재고 확인 및 감소
             if (book.getStock() < quantity) {
-                throw new InsufficientStockException(INSUFFICIENT_STOCK + ": " + book.getTitle());
+                throw new InsufficientStockException(book.getTitle() + " : " + INSUFFICIENT_STOCK);
             }
             book.setStock(book.getStock() - quantity);
 

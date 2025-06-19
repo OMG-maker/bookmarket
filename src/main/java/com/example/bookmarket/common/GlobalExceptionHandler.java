@@ -62,7 +62,6 @@ public class GlobalExceptionHandler {
         return buildErrorResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
     }
 
-
     // 책 파트
     @ExceptionHandler(BookAlreadyExistsException.class)
     public ResponseEntity<?> handleBookAlreadyExists(BookAlreadyExistsException ex) {

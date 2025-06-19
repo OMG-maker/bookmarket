@@ -15,7 +15,6 @@ public class ErrorMessages {
     public static final String REFRESH_TOKEN_MISMATCH = "Refresh Token이 일치하지 않습니다.";
     public static final String REFRESH_TOKEN_NOT_FOUND = "Refresh Token이 존재하지 않습니다.";
 
-
     // 결제 관련 관련
     public static final String CART_NOT_FOUND = "장바구니를 찾을 수 없습니다.";
     public static final String CART_EMPTY = "장바구니가 비어있습니다.";
@@ -25,8 +24,13 @@ public class ErrorMessages {
     public static final String TOTAL_PRICE_SMALL_THAN_ZERO = "총 가격은 0보다 커야 합니다.";
     public static final String CART_BOOK_NOT_FOUND = "장바구니에 해당 도서가 없습니다.";
 
+    // 리뷰 관련
+    public static final String REVIEW_NOT_FOUND = "해당 ID의 리뷰가 존재하지 않습니다.";
+    public static final String REVIEW_NOT_OWNED = "본인 리뷰만 삭제할 수 있습니다.";
 
+    // 책 관련
     public static final String BOOK_NOT_FOUND = "해당 ID의 책이 존재하지 않습니다.";
     public static final String BOOK_ALREADY_EXISTS = "이미 존재하는 책입니다.";
+
     // 필요한 에러 메시지 계속 추가 가능
 }

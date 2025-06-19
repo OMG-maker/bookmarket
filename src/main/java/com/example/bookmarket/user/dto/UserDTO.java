@@ -58,7 +58,6 @@ public class UserDTO {
                 .role(this.role)
                 .isActive(this.isActive)
                 .build();
-
     }
 
 }
