@@ -7,20 +7,20 @@
 * * *
 ## 📑 목차
 [__1. 프로젝트 개요__](#-프로젝트-개요)
-   - [주제 및 목표](#-주제-및-목표)
-   - [역할](#-역할)
-<br/>
-  
+- [주제 및 목표](#-주제-및-목표)
+- [역할](#-역할)
+  <br/>
+
 [__2. 주요 구현 기능__](#-주요-구현-기능)
-   - [도서 검색 API](#-도서-검색-API)
-   - [도서 구매 신청 API](#-도서-구매-신청-API)
-   - [리뷰 CRUD API](#-리뷰-CRUD-API)
-   - [도서 판매 등록 API](#-도서-판매-등록-API)
-   - [추천 도서 API](#-추천-도서-API)
-<br/>
-<br/>
-<br/>
-<br/>
+- [도서 검색 API](#-도서-검색-API)
+- [도서 구매 신청 API](#-도서-구매-신청-API)
+- [리뷰 CRUD API](#-리뷰-CRUD-API)
+- [희망 도서 신청 API](#-희망-도서-신청-API)
+- [추천 도서 API](#-추천-도서-API)
+  <br/>
+  <br/>
+  <br/>
+  <br/>
 
 * * *
 
@@ -29,45 +29,45 @@
 2025.06.01 ~ 2025.07.20 (7주)
 
 - 1~2주차 : DB 설계(ERD), API 설계(Swagger), Spring Boot 프로젝트 설정 및 검색 API 구현.
-- 3~4주차 : 구매 신청 API, 리뷰 CRUD API, 판매 등록 API 구현 및 테스트(Postman).
+- 3~4주차 : 구매 신청 API, 리뷰 CRUD API, 희망 도서 신청 API 구현 및 테스트(Postman).
 - 5주차 : 추천 도서 API 및 관리자 기능 추가, 전체 기능 테스트.
 - 6주차 : AWS EC2에 배포, OracleDB 연결.
 - 7주차: GitHub Actions로 CI/CD 설정, 포트폴리오 문서 작성
-<br/>
+  <br/>
 
 #### 🖍 주제 및 목표
 __[주제]__
-  - 온라인 중고서점 웹사이트
-<br/>
+- 온라인 중고서점 웹사이트
+  <br/>
 
 __[목표]__
-1. Spring Boot와 MyBatis를 활용해 REST API 기반 백엔드 시스템 구현.
-2. AWS 배포와 CI/CD 파이프라인 구축 경험.
+1. Spring Boot, JPA, QueryDSL 기반 REST API 백엔드 시스템 구현.
+2. AWS 배포 및 CI/CD 파이프라인 구축 경험.
 3. Git/GitHub로 버전 관리 및 브랜치 전략 숙지.
-<br/>
+   <br/>
 
 #### 👥 역할
 __[팀 구성]__
-  - 개인 프로젝트: 기획, 설계, 개발, 테스트, 배포 전 과정 담당.
-<br/>
+- 개인 프로젝트: 기획, 설계, 개발, 테스트, 배포 전 과정 담당.
+  <br/>
 
 __[사용기술 및 개발환경]__
 - OS : Mac
 - Tools  :  IntelliJ IDEA, SQL Developer, Git, GitHub, Postman, Swagger
-- Back-end  :  JDK21, Spring Boot, MyBatis, OracleDB 23.1.1
-- Library  :  Lombok 1.18.30, MyBatis 3.5.15, JUnit 5, Spring Security(선택)
+- Back-end  :  JDK21, Spring Boot, JPA, QueryDSL, OracleDB 23.1.1
+- Library  :  Lombok 1.18.30, Spring Security, JUnit 5
 - 배포  :  AWS EC2, GitHub Actions (CI/CD)
-<br/>
-<br/>
-<br/>
+  <br/>
+  <br/>
+  <br/>
 
 * * *
 
 ## 🙋🏻‍♀ 주요 구현 기능
 #### 🔍 도서 검색 API
 
-- MyBatis 동적 쿼리로 제목, 저자, ISBN 검색 통합 처리.
-- 성능 최적화를 위해 인덱스 설정 및 쿼리 개선.
+- QueryDSL 활용 동적 쿼리로 제목, 저자 검색 지원.
+- 페이징 처리 및 조건별 필터링 가능.
 <details>
 	<summary>코드보기</summary>
 
@@ -80,7 +80,7 @@ __[사용기술 및 개발환경]__
 - 트랜잭션 관리로 데이터 정합성 보장.
 <details>
 	<summary>코드보기</summary>
-	
+
 </details>
 <br/>
 
@@ -94,10 +94,10 @@ __[사용기술 및 개발환경]__
  </details>
 <br/>
 
-#### __📖 도서 판매 등록 API__
+#### __📖 희망 도서 신청 API__
 
-- 알라딘 API 연동(선택), JSON 데이터 파싱 및 DB 저장.
-- 입력 검증 및 예외 처리 강화.
+- 사용자가 새로운 도서 입고 요청 가능.
+- 관리자 페이지에서 요청 목록 확인 후 도서 등록 가능.
 <details>
 	<summary>코드보기</summary>
 </details>
@@ -108,9 +108,8 @@ __[사용기술 및 개발환경]__
 - 구매/조회수 기준 상위 5권 조회.
 - 관리자 지정 추천 도서 등록/삭제 기능.
   <details>
-	<summary>코드보기</summary>
+  <summary>코드보기</summary>
 </details>
 <br/>
 <br/>
 <br/>
-
