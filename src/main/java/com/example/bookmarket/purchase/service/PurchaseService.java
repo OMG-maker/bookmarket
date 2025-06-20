@@ -134,6 +134,11 @@ public class PurchaseService {
                 throw new InsufficientStockException(book.getTitle() + " : " + INSUFFICIENT_STOCK);
             }
             book.setStock(book.getStock() - quantity);
+            // 재고 감소 후 재고가 0 이라면 book의 Status 상태를 OUT_OF_STOCK 으로 수정
+            if (book.getStock() == 0) {
+                book.setStatus(Book.Status.OUT_OF_STOCK);
+            }
+
 
             // PurchaseBook 생성
             PurchaseBook purchaseBook = PurchaseBook.builder()
