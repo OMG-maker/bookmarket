@@ -20,6 +20,7 @@ public class Purchase {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "purchased_at", nullable = false, updatable = false)
     private LocalDateTime purchasedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -39,4 +40,10 @@ public class Purchase {
     @OneToMany(mappedBy = "purchase", cascade = CascadeType.ALL)
     private List<PurchaseBook> purchaseBooks;
 
+    @PrePersist
+    protected void onCreate() {
+        if (this.purchasedAt == null) {
+            this.purchasedAt = LocalDateTime.now();
+        }
+    }
 }

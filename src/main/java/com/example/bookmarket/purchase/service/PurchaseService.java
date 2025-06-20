@@ -26,7 +26,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -111,7 +110,6 @@ public class PurchaseService {
         // 3. Purchase 엔티티 생성 (초기 상태 ACTIVE)
         Purchase purchase = Purchase.builder()
                 .user(currentUser)
-                .purchasedAt(LocalDateTime.now())
                 .status(Purchase.Status.ACTIVE) // 결제 전 상태
                 .build();
 
