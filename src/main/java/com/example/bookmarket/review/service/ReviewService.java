@@ -72,12 +72,12 @@ public class ReviewService {
     }
 
     // ID로 리뷰를 삭제하는 메소드
-    public void deleteById(Long id, String userEmail) {
+    public void deleteById(Long id, Long userId) {
         Review review = reviewRepository.findById(id) // ID로 리뷰 엔티티를 조회
                 .orElseThrow(() -> new ReviewNotFoundException(REVIEW_NOT_FOUND)); // 만약 리뷰가 존재하지 않으면 에러 반환
 
         // 리뷰 작성자가 요청한 사용자와 일치하는지 확인
-        if (!review.getUser().getEmail().equals(userEmail)) {
+        if (!review.getUser().getId().equals(userId)) {
             throw new AccessDeniedException(REVIEW_NOT_OWNED);
         }
 
@@ -85,12 +85,12 @@ public class ReviewService {
     }
 
     // ID로 리뷰를 수정하는 메소드
-    public ReviewDTO update(Long id, ReviewDTO dto, String userEmail) {
+    public ReviewDTO update(Long id, ReviewDTO dto, Long userId) {
         Review review = reviewRepository.findById(id) // ID로 리뷰 엔티티를 조회
                 .orElseThrow(() -> new ReviewNotFoundException(REVIEW_NOT_FOUND)); // 만약 리뷰가 존재하지 않으면 에러 반환
 
         // 리뷰 작성자가 요청한 사용자와 일치하는지 확인
-        if (!review.getUser().getEmail().equals(userEmail)) {
+        if (!review.getUser().getId().equals(userId)) {
             throw new AccessDeniedException(REVIEW_NOT_OWNED);
         }
 
@@ -102,7 +102,7 @@ public class ReviewService {
         ));
     }
 
-    // 제목과 저자 이름으로 리뷰를 페이지 단위로 검색하는 메소드
+    // userId, bookId로 리뷰를 페이지 단위로 검색하는 메소드
     public Page<ReviewDTO> searchReviews(Long userId, Long bookId, Pageable pageable) {
         return reviewRepository
                 .searchReviews(userId, bookId, pageable)  // 👉 ReviewRepositoryImpl의 QueryDSL 메소드 호출됨

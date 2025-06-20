@@ -17,7 +17,6 @@ import java.util.List;
 @RequestMapping("/reviews")
 public class ReviewController {
 
-    // ReviewService를 주입받기 위한 필드
     private final ReviewService reviewService;
     private final UserService userService;
 
@@ -56,23 +55,27 @@ public class ReviewController {
         return ResponseEntity.ok(savedReview);
     }
 
-    // ID로 리뷰를 삭제하는 엔드포인트
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteReview(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
-        String userEmail = userDetails.getUsername();
-        reviewService.deleteById(id, userEmail); // ID로 리뷰를 삭제, 없으면 예외 던짐
-        return ResponseEntity.noContent().build(); // 204 반환
-    }
-
     // ID로 리뷰를 수정하는 엔드포인트
     @PutMapping("/{id}")
     public ResponseEntity<ReviewDTO> updateReview(@PathVariable Long id, @RequestBody ReviewDTO dto, @AuthenticationPrincipal UserDetails userDetails) {
         String userEmail = userDetails.getUsername();
-        ReviewDTO updatedReview = reviewService.update(id, dto, userEmail); // ID로 사용자를 수정, 없으면 예외 던짐
+        Long userId = userService.findByEmail(userEmail).getId();
+
+        ReviewDTO updatedReview = reviewService.update(id, dto, userId); // ID로 리뷰를 수정, 없으면 예외 던짐
         return ResponseEntity.ok(updatedReview); // HTTP 200 OK 응답으로 반환
     }
 
-    // 페이징 서치
+    // ID로 리뷰를 삭제하는 엔드포인트
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteReview(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
+        String userEmail = userDetails.getUsername();
+        Long userId = userService.findByEmail(userEmail).getId();
+
+        reviewService.deleteById(id, userId); // ID로 리뷰를 삭제, 없으면 예외 던짐
+        return ResponseEntity.noContent().build(); // 204 반환
+    }
+
+    // 리뷰 페이징 서치
     @GetMapping("/search")
     public ResponseEntity<Page<ReviewDTO>> searchReviews(
             @RequestParam(required = false) Long userId,
@@ -85,7 +88,7 @@ public class ReviewController {
         return ResponseEntity.ok(result);
     }
 
-    // 내 리뷰 보기
+    // 내 리뷰 페이징 보기
     @GetMapping("/my-reviews")
     public ResponseEntity<Page<ReviewDTO>> myReviews(
             @AuthenticationPrincipal UserDetails userDetails,

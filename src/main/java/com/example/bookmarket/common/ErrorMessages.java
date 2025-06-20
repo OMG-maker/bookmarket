@@ -26,7 +26,11 @@ public class ErrorMessages {
 
     // 리뷰 관련
     public static final String REVIEW_NOT_FOUND = "해당 ID의 리뷰가 존재하지 않습니다.";
-    public static final String REVIEW_NOT_OWNED = "본인 리뷰만 삭제할 수 있습니다.";
+    public static final String REVIEW_NOT_OWNED = "본인의 리뷰가 아닙니다.";
+
+    // 희망 도서 관련
+    public static final String REQUESTED_BOOK_NOT_FOUND = "해당 ID의 희망 도서가 존재하지 않습니다.";
+    public static final String REQUESTED_BOOK_NOT_OWNED = "본인의 희망도서가 아닙니다.";
 
     // 책 관련
     public static final String BOOK_NOT_FOUND = "해당 ID의 책이 존재하지 않습니다.";

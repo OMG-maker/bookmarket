@@ -62,6 +62,7 @@ public class SecurityConfig {
 //                        .requestMatchers("/books/**").permitAll() // 책 관련 API는 모두 접근 허용
                         .requestMatchers(HttpMethod.GET, "/books/**").permitAll() // ✅ 책 API는 조회만 공개
                         .requestMatchers(HttpMethod.GET, "/reviews/**").permitAll() // ✅ 리뷰 API는 조회만 공개
+                        .requestMatchers(HttpMethod.GET, "/requested-books/**").permitAll() // ✅ 리뷰 API는 조회만 공개
                         .requestMatchers(
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",

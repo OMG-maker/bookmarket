@@ -20,6 +20,7 @@ import com.example.bookmarket.user.exception.UserNotFoundException;
 import com.example.bookmarket.user.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -33,6 +34,7 @@ import static com.example.bookmarket.common.ErrorMessages.*;
 
 @Service
 @RequiredArgsConstructor
+@EnableWebSecurity
 @Transactional
 public class PurchaseService {
 
