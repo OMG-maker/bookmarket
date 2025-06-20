@@ -71,7 +71,7 @@ public class BookService {
                 .title(dto.getTitle()) // 사용자 이름 수정
                 .author(dto.getAuthor()) // 설명 수정
                 .isbn(dto.getIsbn()) // 가격 수정
-                .publishedAt(dto.getPublishedAt()) // 이미지 URL 수정
+                .publishedAt(dto.getPublishedAt()) // 출판일 수정
                 .stock(dto.getStock()) // 재고 수정
                 .price(dto.getPrice()) // 가격 수정
 //                .isActive(dto.getIsActive()) // 활성화 여부 수정

@@ -47,13 +47,6 @@ public class Book {
         IN_STOCK, OUT_OF_STOCK, DISCONTINUED
     }
 
-    // ▶ 저장 전에 호출되어 publishedAt이 null이면 현재 시간으로 자동 세팅
-    @PrePersist
-    public void prePersist() {
-        if (publishedAt == null) {
-            publishedAt = LocalDateTime.now();
-        }
-    }
 }
 
 //
