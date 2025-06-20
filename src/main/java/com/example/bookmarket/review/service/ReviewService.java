@@ -65,18 +65,10 @@ public class ReviewService {
         Review review = dto.toEntity();
         review.setUser(user);
         review.setBook(book);
+        // build() 방식도 가능하지만 성능상, 코드상 이득 없음. 가독성도 별로 안 좋아짐.
 
         Review saved = reviewRepository.save(review); // BookDTO 형태로 받아온 데이터를 Book 엔티티로 변환하여 저장
         return ReviewDTO.fromEntity(saved); // 저장한 결과값을 반환
-
-//        Review newReview = dto.toEntity().toBuilder()
-//                .content(encodedPassword)
-//                .role(User.Role.USER) // 기본 역할 부여 (Role.USER로 가정)
-//                .build();
-//
-//        Review saved = reviewRepository.save(newReview);
-//
-//        return ReviewDTO.fromEntity(saved); // 저장한 결과값을 반환
     }
 
     // ID로 리뷰를 삭제하는 메소드
@@ -88,10 +80,6 @@ public class ReviewService {
         if (!review.getUser().getEmail().equals(userEmail)) {
             throw new AccessDeniedException(REVIEW_NOT_OWNED);
         }
-
-//        if (!reviewRepository.existsById(id)) { // ID로 리뷰가 존재하는지 확인
-//            throw new ReviewNotFoundException(REVIEW_NOT_FOUND); // 만약 리뷰가 존재하지 않으면 예외 발생
-//        }
 
         reviewRepository.deleteById(id); // ID로 리뷰를 삭제
     }

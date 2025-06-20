@@ -61,6 +61,7 @@ public class UserService {
         // 비밀번호 암호화
         String encodedPassword = passwordEncoder.encode(dto.getPassword());
 
+        // .build() 방식을 쓰는 이유 : User 엔티티의 암호화된 비밀번호 삽입 및 role 적용
         User newUser = dto.toEntity().toBuilder()
                 .password(encodedPassword)
                 .role(User.Role.USER) // 기본 역할 부여 (Role.USER로 가정)
