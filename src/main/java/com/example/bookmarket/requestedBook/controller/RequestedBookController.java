@@ -3,6 +3,7 @@ package com.example.bookmarket.requestedBook.controller;
 import com.example.bookmarket.requestedBook.dto.RequestedBookDTO;
 import com.example.bookmarket.requestedBook.service.RequestedBookService;
 import com.example.bookmarket.user.service.UserService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -15,16 +16,12 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/requested-books")
 public class RequestedBookController {
 
     private final RequestedBookService requestedBookService;
     private final UserService userService;
-
-    public RequestedBookController(RequestedBookService requestedBookService, UserService userService) {
-        this.requestedBookService = requestedBookService;
-        this.userService = userService;
-    }
 
     // 모든 희망 도서를 조회하는 엔드포인트
     @GetMapping
@@ -54,7 +51,7 @@ public class RequestedBookController {
         return ResponseEntity.ok(savedRequestedBook);
     }
 
-    // ID로 희망 도서를 수정하는 엔드포인트
+    // 자신의 희망 도서를 ID로 수정하는 엔드포인트
     @PutMapping("/{id}")
     public ResponseEntity<RequestedBookDTO> updateRequestedBook(@PathVariable Long id, @RequestBody RequestedBookDTO dto, @AuthenticationPrincipal UserDetails userDetails) {
         String userEmail = userDetails.getUsername();
@@ -64,7 +61,7 @@ public class RequestedBookController {
         return ResponseEntity.ok(updatedRequestedBook); // HTTP 200 OK 응답으로 반환
     }
 
-    // ID로 희망 도서를 삭제하는 엔드포인트
+    // 자신의 희망 도서를 ID로 삭제하는 엔드포인트
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteRequestedBook(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
         String userEmail = userDetails.getUsername();

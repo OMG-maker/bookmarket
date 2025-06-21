@@ -5,6 +5,7 @@ public class ErrorMessages {
     // 회원가입, 사용자 관련
     public static final String USER_NOT_FOUND = "해당 ID의 사용자가 존재하지 않습니다.";
     public static final String USER_ALREADY_EXISTS = "이미 존재하는 사용자입니다.";
+    public static final String USER_EMAIL_ALREADY_EXISTS = "이미 존재하는 이메일입니다.";
 
     // 로그인 관련
     public static final String INVALID_PASSWORD = "비밀번호가 올바르지 않습니다.";

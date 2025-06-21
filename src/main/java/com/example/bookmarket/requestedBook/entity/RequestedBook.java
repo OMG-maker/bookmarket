@@ -29,16 +29,29 @@ public class RequestedBook {
 
     private String publisher;
 
-    @Column(unique = true, length = 20)
+    @Column(length = 20, nullable = false)
     private String isbn;  // 고유번호
 
     @Column(name = "requested_at", nullable = false, updatable = false)
     private LocalDateTime requestedAt;
 
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private Status status;
+
+    public enum Status {
+        PENDING, // 요청됨 (기본 상태)
+        COMPLETED, // 입고 등 완료됨
+        REJECTED // 반려됨 (관리자가 거절)
+    }
+
     @PrePersist
     protected void onCreate() {
         if (this.requestedAt == null) {
             this.requestedAt = LocalDateTime.now();
+        }
+        if (this.status == null) {
+            this.status = Status.PENDING;
         }
     }
 }

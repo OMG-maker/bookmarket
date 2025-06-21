@@ -18,6 +18,7 @@ public class RequestedBookDTO {
     private String publisher; // 출판사
     private String isbn;  // 고유번호
     private LocalDateTime requestedAt; // 구매 요청 날짜
+    private RequestedBook.Status status;
 
     /**
      * RequestedBook 엔티티를 RequestedBookDTO로 변환하는 정적 메소드
@@ -34,6 +35,7 @@ public class RequestedBookDTO {
                 .publisher(requestedBook.getPublisher())
                 .isbn(requestedBook.getIsbn())
                 .requestedAt(requestedBook.getRequestedAt())
+                .status(requestedBook.getStatus())
                 .build();
     }
 

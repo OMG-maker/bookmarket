@@ -1,5 +1,7 @@
 package com.example.bookmarket.requestedBook.service;
 
+import com.example.bookmarket.book.exception.BookAlreadyExistsException;
+import com.example.bookmarket.book.repository.BookRepository;
 import com.example.bookmarket.requestedBook.dto.RequestedBookDTO;
 import com.example.bookmarket.requestedBook.entity.RequestedBook;
 import com.example.bookmarket.requestedBook.exception.RequestedBookNotFoundException;
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.example.bookmarket.common.ErrorMessages.*;
 
@@ -29,8 +32,9 @@ public class RequestedBookService {
 
     private final RequestedBookRepository requestedBookRepository;
     private final UserRepository userRepository;
+    private final BookRepository bookRepository;
 
-    // 모든 희망 도서를  조회하는 메소드
+    // 모든 희망 도서를 조회하는 메소드
     public List<RequestedBookDTO> findAll() {
         return requestedBookRepository.findAll() // 모든 엔티티를 조회
                 .stream()// 조회된 RequestedBook 엔티티 리스트를 스트림으로 변환
@@ -51,8 +55,12 @@ public class RequestedBookService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND));
 
-        // DTO → Entity 변환
-            // 클라이언트에서 받아온 DTO정보에는 사용자 정보가 없으므로, 위에서 userId로 찾은 User를 설정해야 함.
+        // 📌 매장(Book) 테이블에 이미 있는 ISBN인지 확인
+        if (bookRepository.findByIsbn(dto.getIsbn()).isPresent()) {
+            throw new BookAlreadyExistsException(BOOK_ALREADY_EXISTS);
+        }
+
+        // DTO → Entity 변환  // 클라이언트에서 받아온 DTO정보에는 사용자 정보가 없으므로, 위에서 userId로 찾은 User를 설정해야 함.
         RequestedBook requestedBook = dto.toEntity();
         requestedBook.setUser(user);
         // build() 방식도 가능하지만 성능상, 코드상 이득 없음. 가독성도 별로 안 좋아짐.
@@ -61,7 +69,7 @@ public class RequestedBookService {
         return RequestedBookDTO.fromEntity(saved); // 저장한 결과값을 반환
     }
 
-    // ID로 희망 도서를 삭제하는 메소드
+    // 자신의 희망 도서를 ID로 삭제하는 메소드
     public void deleteById(Long id, Long userId) {
         RequestedBook requestedBook = requestedBookRepository.findById(id) // ID로 리뷰 엔티티를 조회
                 .orElseThrow(() -> new RequestedBookNotFoundException(REQUESTED_BOOK_NOT_FOUND)); // 만약 리뷰가 존재하지 않으면 에러 반환
@@ -74,7 +82,7 @@ public class RequestedBookService {
         requestedBookRepository.deleteById(id); // ID로 리뷰를 삭제
     }
 
-    // ID로 희망 도서를 수정하는 메소드
+    // 자신의 희망 도서를 ID로 수정하는 메소드
     public RequestedBookDTO update(Long id, RequestedBookDTO dto, Long userId) {
         RequestedBook requestedBook = requestedBookRepository.findById(id) // ID로 희망 도서를 엔티티를 조회
                 .orElseThrow(() -> new RequestedBookNotFoundException(REQUESTED_BOOK_NOT_FOUND)); // 만약 희망 도서가 존재하지 않으면 에러 반환
@@ -94,11 +102,71 @@ public class RequestedBookService {
         ));
     }
 
-    // 제목과 저자 이름으로 희망 도서를 페이지 단위로 검색하는 메소드
+    // RequestedBook 필드들 기준으로 희망 도서를 페이지 단위로 검색하는 메소드
     public Page<RequestedBookDTO> searchRequestedBooks(Long userId, String title, String author, String isbn, String publisher, LocalDateTime startDate, LocalDateTime endDate, Pageable pageable) {
         return requestedBookRepository
                 .searchRequestedBooks(userId, title, author, isbn, publisher, startDate, endDate, pageable) // 페이지 단위로 희망 도서를 검색
                 .map(RequestedBookDTO::fromEntity);
     }
-    
+
+    /**
+     * 여러 희망 도서 요청을 일괄 반려 처리
+     * @param ids 반려할 RequestedBook ID 리스트
+     * @return 반려 처리된 RequestedBookDTO 리스트
+     */
+    public List<RequestedBookDTO> rejectRequestedBooks(List<Long> ids) {
+        List<RequestedBook> requestedBooks = requestedBookRepository.findAllById(ids);
+
+        for (RequestedBook rb : requestedBooks) {
+            rb.setStatus(RequestedBook.Status.REJECTED);
+        }
+
+        List<RequestedBook> updated = requestedBookRepository.saveAll(requestedBooks);
+
+        return updated.stream()
+                .map(RequestedBookDTO::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+//    // 승인 상태로 변경 - 예시 1
+//    public RequestedBookDTO approveRequestedBook(Long id) {
+//        RequestedBook requestedBook = requestedBookRepository.findById(id)
+//                .orElseThrow(() -> new RequestedBookNotFoundException(REQUESTED_BOOK_NOT_FOUND));
+//
+//        // 이미 있는 ISBN인 경우 REJECTED 설정
+//        if (bookRepository.findByIsbn(requestedBook.getIsbn()).isPresent()) {
+//            requestedBook.setStatus(RequestedBook.Status.REJECTED);
+//        } else{
+//            requestedBook.setStatus(RequestedBook.Status.COMPLETED);
+//        }
+//        RequestedBook updated = requestedBookRepository.save(requestedBook);
+//        return RequestedBookDTO.fromEntity(updated);
+//    }
+
+//    // 승인 상태로 변경 - 예시 2
+//    public RequestedBookDTO approveRequestedBook(Long id) {
+//        RequestedBook requestedBook = requestedBookRepository.findById(id)
+//                .orElseThrow(() -> new RequestedBookNotFoundException(REQUESTED_BOOK_NOT_FOUND));
+//
+//        String isbn = requestedBook.getIsbn();
+//
+//        // 이미 있는 ISBN인 경우 REJECTED 설정
+//        if (bookRepository.findByIsbn(requestedBook.getIsbn()).isPresent()) {
+//            requestedBook.setStatus(RequestedBook.Status.REJECTED);
+//        } else{
+//            requestedBook.setStatus(RequestedBook.Status.COMPLETED);
+//        }
+//
+//        // 책 입고 및 승인 처리 등 비즈니스 로직 수행
+//
+//        // 같은 ISBN, 상태가 PENDING인 모든 요청 찾기
+//        List<RequestedBook> pendingRequests = requestedBookRepository.findAllByIsbnAndStatus(isbn, RequestedBook.Status.PENDING);
+//
+//        // 모두 상태 COMPLETED로 변경
+//        pendingRequests.forEach(r -> r.setStatus(RequestedBook.Status.COMPLETED));
+//
+//        // 일괄 저장
+//        requestedBookRepository.saveAll(pendingRequests);
+//    }
+
 }
