@@ -9,4 +9,5 @@ import java.util.Optional;
 @Repository
 public interface BookRepository extends JpaRepository<Book, Long>, BookRepositoryCustom {
     Optional<Book> findByTitleAndAuthor(String title, String author); // 👈 title author 중복 체크용
+    Optional<Book> findByIsbn(String isbn);
 }

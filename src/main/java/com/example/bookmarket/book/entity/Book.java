@@ -24,10 +24,11 @@ public class Book {
     @Column(nullable = false)
     private String author;
 
-    @Column(unique = true, length = 20)
+//    @Column(unique = true, length = 20)
+    @Column(unique = true, nullable = false, length = 20)
     private String isbn;  // 고유번호
 
-    private LocalDateTime publishedAt;
+    private LocalDateTime publishedAt; // 출판일
 
     @Column(nullable = false)
     private Integer stock;
