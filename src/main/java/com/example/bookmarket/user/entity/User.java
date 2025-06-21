@@ -17,14 +17,20 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(unique = true, nullable = false)
     private String email;
+
+    @Column(nullable = false)
     private String username;
+
+    @Column(nullable = false) // 비밀번호 필수
     private String password;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false) // ROLE 반드시 필요
     private Role role;
 
     @Column(name = "is_active", nullable = false)
