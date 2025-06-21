@@ -31,7 +31,7 @@
 - 1~2주차 : DB 설계(ERD), API 설계(Swagger), Spring Boot 프로젝트 설정 및 검색 API 구현.
 - 3~4주차 : 구매 신청 API, 리뷰 CRUD API, 희망 도서 신청 API 구현 및 테스트(Postman).
 - 5주차 : 추천 도서 API 및 관리자 기능 추가, 전체 기능 테스트.
-- 6주차 : AWS EC2에 배포, OracleDB 연결.
+- 6주차 : AWS EC2에 배포, MariaDB 연결.
 - 7주차: GitHub Actions로 CI/CD 설정, 포트폴리오 문서 작성
   <br/>
 
@@ -54,8 +54,8 @@ __[팀 구성]__
 __[사용기술 및 개발환경]__
 - OS : Mac
 - Tools  :  IntelliJ IDEA, SQL Developer, Git, GitHub, Postman, Swagger
-- Back-end  :  JDK21, Spring Boot, JPA, QueryDSL, OracleDB 23.1.1
-- Library  :  Lombok 1.18.30, Spring Security, JUnit 5
+- Back-end  :  JDK21, Spring Boot, JPA, QueryDSL, MariaDB 11.7.2
+- Library  :  Lombok 1.18.38, Spring Security, JUnit 5
 - 배포  :  AWS EC2, GitHub Actions (CI/CD)
   <br/>
   <br/>
