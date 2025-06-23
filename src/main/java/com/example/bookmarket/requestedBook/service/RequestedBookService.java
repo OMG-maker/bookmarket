@@ -61,9 +61,11 @@ public class RequestedBookService {
         }
 
         // 이전 toEntity() 방법
+        // DTO → Entity 변환  // 클라이언트에서 받아온 DTO정보에는 사용자 정보가 없으므로, 위에서 userId로 찾은 User를 설정해야 함.
         //        RequestedBook requestedBook = dto.toEntity();
         //        requestedBook.setUser(user);
 
+        // 수정된 toEntity() 방법
         // DTO → Entity 변환  // 클라이언트에서 받아온 DTO정보에는 사용자 정보가 없으므로, 위에서 userId로 찾은 User를 설정해야 함.
         RequestedBook requestedBook = dto.toEntity(user);
 
@@ -96,12 +98,32 @@ public class RequestedBookService {
 
         // 수정된 결과를 RequestedBookDTO 변환하여 반환
         return RequestedBookDTO.fromEntity(requestedBookRepository.save(requestedBook.toBuilder()
-                .title(dto.getTitle()) // 리뷰 내용 수정
-                .author(dto.getAuthor()) // 리뷰 작성자 수정
-                .publisher(dto.getPublisher()) // 출판사 수정
-                .isbn(dto.getIsbn()) // ISBN 수정
+                .title(dto.getTitle() != null ? dto.getTitle() : requestedBook.getTitle()) // 희망 도서 제목 수정
+                .author(dto.getAuthor() != null ? dto.getAuthor() : requestedBook.getAuthor()) // 희망 도서 작성자 수정
+                .publisher(dto.getPublisher() != null ? dto.getPublisher() : requestedBook.getPublisher()) // 출판사 수정
+                .isbn(dto.getIsbn() != null ? dto.getIsbn() : requestedBook.getIsbn()) // ISBN 수정
                 .build()
         ));
+
+        // toBuilder() 메소드를 사용하지 않고 수정하는 방법 예시
+//        RequestedBook.RequestedBookBuilder builder = requestedBook.toBuilder();
+//
+//        // 필요한 필드들 전부 체크
+//        if (dto.getTitle() != null) builder.title(dto.getTitle());
+//        if (dto.getAuthor() != null) builder.author(dto.getAuthor());
+//        if (dto.getPublisher() != null) builder.publisher(dto.getPublisher());
+//        if (dto.getIsbn() != null) builder.isbn(dto.getIsbn());
+//
+//        return RequestedBookDTO.fromEntity(requestedBookRepository.save(builder.build()));
+//
+//        // 수정된 결과를 RequestedBookDTO 변환하여 반환
+//        return RequestedBookDTO.fromEntity(requestedBookRepository.save(requestedBook.toBuilder()
+//                .title(dto.getTitle() != null ? dto.getTitle() : requestedBook.getTitle()) // 희망 도서 제목 수정
+//                .author(dto.getAuthor() != null ? dto.getAuthor() : requestedBook.getAuthor()) // 희망 도서 작성자 수정
+//                .publisher(dto.getPublisher() != null ? dto.getPublisher() : requestedBook.getPublisher()) // 출판사 수정
+//                .isbn(dto.getIsbn() != null ? dto.getIsbn() : requestedBook.getIsbn()) // ISBN 수정
+//                .build()
+//        ));
     }
 
     // RequestedBook 필드들 기준으로 희망 도서를 페이지 단위로 검색하는 메소드

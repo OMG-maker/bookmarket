@@ -32,7 +32,7 @@ public class RequestedBookController {
 
     // ID로 희망 도서를 조회하는 엔드포인트
     @GetMapping("/{id}")
-    public ResponseEntity<RequestedBookDTO> getRequestedBooksById(@PathVariable Long id) {
+    public ResponseEntity<RequestedBookDTO> getRequestedBookById(@PathVariable Long id) {
         RequestedBookDTO requestedBook = requestedBookService.findById(id); // ID로 희망 도서를 조회, 없으면 예외 던짐
         return ResponseEntity.ok(requestedBook); // HTTP 200 OK 응답으로 반환
     }
