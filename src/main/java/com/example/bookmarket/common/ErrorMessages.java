@@ -33,9 +33,13 @@ public class ErrorMessages {
     public static final String REQUESTED_BOOK_NOT_FOUND = "해당 ID의 희망 도서가 존재하지 않습니다.";
     public static final String REQUESTED_BOOK_NOT_OWNED = "본인의 희망도서가 아닙니다.";
 
+
     // 책 관련
     public static final String BOOK_NOT_FOUND = "해당 ID의 책이 존재하지 않습니다.";
     public static final String BOOK_ALREADY_EXISTS = "이미 존재하는 책입니다.";
+
+    // 추천 도서 관련
+    public static final String RECOMMENDED_BOOK_NOT_FOUND = "해당 ID의 추천 도서가 존재하지 않습니다.";
 
     // 필요한 에러 메시지 계속 추가 가능
 }
