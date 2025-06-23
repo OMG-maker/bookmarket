@@ -87,10 +87,8 @@ public class BookService {
                 .publishedAt(dto.getPublishedAt() != null ? dto.getPublishedAt() : book.getPublishedAt()) // 출판일 수정
                 .stock(dto.getStock() != null ? dto.getStock() : book.getStock()) // 재고 수정
                 .price(dto.getPrice() != null ? dto.getPrice() : book.getPrice()) // 가격 수정
-//                .isActive(dto.getIsActive()) // 활성화 여부 수정
-//                .status(dto.getStatus()) // 상태 수정
-                .isActive(dto.getIsActive() != null ? dto.getIsActive() : book.getIsActive())
-                .status(dto.getStatus() != null ? dto.getStatus() : book.getStatus())
+                .isActive(dto.getIsActive() != null ? dto.getIsActive() : book.getIsActive()) // 활성화 여부 수정
+                .status(dto.getStatus() != null ? dto.getStatus() : book.getStatus()) // 상태 수정
                 .build()
         ));
     }
