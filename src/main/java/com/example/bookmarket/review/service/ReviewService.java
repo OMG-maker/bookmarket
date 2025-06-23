@@ -61,12 +61,17 @@ public class ReviewService {
         Book book = bookRepository.findById(bookId)
                 .orElseThrow(() -> new BookNotFoundException(BOOK_NOT_FOUND));
 
-        // DTO → Entity 변환
-        Review review = dto.toEntity();
-        review.setUser(user);
-        review.setBook(book);
-        // build() 방식도 가능하지만 성능상, 코드상 이득 없음. 가독성도 별로 안 좋아짐.
+        // 이전 toEntity() 방법
+//         DTO → Entity 변환
+//        Review review = dto.toEntity();
+//        review.setUser(user);
+//        review.setBook(book);
 
+        // 수정된 toEntity() 방법
+        // DTO → Entity 변환
+        Review review = dto.toEntity(user, book);
+
+        // build() 방식도 가능하지만 성능상, 코드상 이득 없음. 가독성도 별로 안 좋아짐.
         Review saved = reviewRepository.save(review); // BookDTO 형태로 받아온 데이터를 Book 엔티티로 변환하여 저장
         return ReviewDTO.fromEntity(saved); // 저장한 결과값을 반환
     }
@@ -96,7 +101,7 @@ public class ReviewService {
 
         // 수정된 결과를 ReviewDTO 변환하여 반환
         return ReviewDTO.fromEntity(reviewRepository.save(review.toBuilder() // toBuilder()를 사용해서 기존 user를 복사하면서 변경
-                .content(dto.getContent()) // 리뷰 내용 수정
+                .content(dto.getContent() != null ? dto.getContent() : review.getContent()) // 리뷰 내용 수정
                 // 리뷰 id, 사용자 id, 책 id, 작성 시간 수정은 일반적으로 하지 않음
                 .build()
         ));

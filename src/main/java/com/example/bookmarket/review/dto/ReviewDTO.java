@@ -1,6 +1,8 @@
 package com.example.bookmarket.review.dto;
 
+import com.example.bookmarket.book.entity.Book;
 import com.example.bookmarket.review.entity.Review;
+import com.example.bookmarket.user.entity.User;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -36,12 +38,12 @@ public class ReviewDTO {
      * ReviewDTO를 Review 엔티티로 변환하는 메소드
      * @return 변환된 Review 엔티티
      */
-    public Review toEntity() {
+    public Review toEntity(User user, Book book) {
         return Review.builder()
                 .id(this.id)
                 .content(this.content)
-                .user(null) // User 엔티티는 별도로 설정해야 함
-                .book(null) // Book 엔티티는 별도로 설정해야 함
+                .user(user)
+                .book(book)
                 .createdAt(this.createdAt)
                 .build();
     }
