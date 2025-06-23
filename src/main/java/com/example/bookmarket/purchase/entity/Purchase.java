@@ -27,10 +27,11 @@ public class Purchase {
     @JoinColumn(name = "user_id")
     private User user;
 
+    @Column(nullable = false)
     private BigDecimal totalPrice;
 
     @Enumerated(EnumType.STRING)
-//    private Purchase.Status status;
+    @Column(nullable = false)
     private Status status;
 
     public enum Status {
