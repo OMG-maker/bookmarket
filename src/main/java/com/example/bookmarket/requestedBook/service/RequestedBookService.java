@@ -60,10 +60,12 @@ public class RequestedBookService {
             throw new BookAlreadyExistsException(BOOK_ALREADY_EXISTS);
         }
 
+        // 이전 toEntity() 방법
+        //        RequestedBook requestedBook = dto.toEntity();
+        //        requestedBook.setUser(user);
+
         // DTO → Entity 변환  // 클라이언트에서 받아온 DTO정보에는 사용자 정보가 없으므로, 위에서 userId로 찾은 User를 설정해야 함.
-        RequestedBook requestedBook = dto.toEntity();
-        requestedBook.setUser(user);
-        // build() 방식도 가능하지만 성능상, 코드상 이득 없음. 가독성도 별로 안 좋아짐.
+        RequestedBook requestedBook = dto.toEntity(user);
 
         RequestedBook saved = requestedBookRepository.save(requestedBook); // RequestedBookDTO 형태로 받아온 데이터를 RequestedBook 엔티티로 변환하여 저장
         return RequestedBookDTO.fromEntity(saved); // 저장한 결과값을 반환

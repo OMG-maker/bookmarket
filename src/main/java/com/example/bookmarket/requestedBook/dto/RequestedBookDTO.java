@@ -1,6 +1,7 @@
 package com.example.bookmarket.requestedBook.dto;
 
 import com.example.bookmarket.requestedBook.entity.RequestedBook;
+import com.example.bookmarket.user.entity.User;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -26,6 +27,7 @@ public class RequestedBookDTO {
      * @param requestedBook 변환할 RequestedBook 엔티티
      * @return 변환된 RequestedBookDTO 객체
      */
+    // DB에서 가져온 Entity 객체를 클라이언트에 응답 보낼 때 사용.
     public static RequestedBookDTO fromEntity(RequestedBook requestedBook) {
         return RequestedBookDTO.builder()
                 .id(requestedBook.getId())
@@ -39,25 +41,23 @@ public class RequestedBookDTO {
                 .build();
     }
 
-
     /**
      * RequestedBookDTO를 RequestedBook 엔티티로 변환하는 메소드
      *
      * @return 변환된 RequestedBook 엔티티
      */
-    public RequestedBook toEntity() {
+    // 클라이언트가 JSON으로 보낸 DTO 요청을 DB 저장용 Entity로 변환할 때 사용.
+    public RequestedBook toEntity(User user) {
         return RequestedBook.builder()
                 .id(this.id)
-                .user(null) // User 엔티티는 별도로 설정해야 함
-                // Service 에서 아래처럼 설정
-                    // User user = userRepository.findById(this.userId).orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND))
-                    // RequestedBook requestedBook = dto.toEntity();
-                    // requestedBook.setUser(user);
+                .user(user) // 외부에서 만들어서 주입했음
                 .title(this.title)
                 .author(this.author)
                 .publisher(this.publisher)
                 .isbn(this.isbn)
-                .requestedAt(this.requestedAt)
+                //      객체 생성 시 @PrePersist 에서 requestedAt, status 설정
+                // .requestedAt(this.requestedAt)
+                // .status(this.status != null ? this.status : RequestedBook.Status.PENDING)
                 .build();
     }
 }
