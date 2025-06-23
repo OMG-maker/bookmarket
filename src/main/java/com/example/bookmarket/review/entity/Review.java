@@ -40,7 +40,9 @@ public class Review {
     // ▶ 저장 전에 호출되어 createdAt이 null이면 현재 시간으로 자동 세팅
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();   // 생성 시 현재 시간
+        if (this.createdAt == null) {            // null이면 true로 세팅
+            this.createdAt = LocalDateTime.now();
+        }
         if (this.isActive == null) {            // null이면 true로 세팅
             this.isActive = true;
         }
