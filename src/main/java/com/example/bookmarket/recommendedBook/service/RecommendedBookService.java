@@ -3,7 +3,10 @@ package com.example.bookmarket.recommendedBook.service;
 import com.example.bookmarket.book.entity.Book;
 import com.example.bookmarket.book.exception.BookNotFoundException;
 import com.example.bookmarket.book.repository.BookRepository;
+import com.example.bookmarket.purchase.dto.TopSellingBookDTO;
+import com.example.bookmarket.purchaseBook.repository.PurchaseBookRepository;
 import com.example.bookmarket.recommendedBook.dto.RecommendedBookDTO;
+import com.example.bookmarket.recommendedBook.dto.RecommendedBookSearchCondition;
 import com.example.bookmarket.recommendedBook.entity.RecommendedBook;
 import com.example.bookmarket.recommendedBook.exception.RecommendedBookNotFoundException;
 import com.example.bookmarket.recommendedBook.repository.RecommendedBookRepository;
@@ -15,6 +18,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.example.bookmarket.common.ErrorMessages.*;
@@ -26,6 +32,7 @@ import static com.example.bookmarket.common.ErrorMessages.*;
 public class RecommendedBookService {
 
     private final RecommendedBookRepository recommendedBookRepository;
+    private final PurchaseBookRepository purchaseBookRepository;
     private final UserRepository userRepository;
     private final BookRepository bookRepository;
 
@@ -42,6 +49,15 @@ public class RecommendedBookService {
         return recommendedBookRepository.findById(id) // ID로 추천 도서 엔티티를 조회
                 .map(RecommendedBookDTO::fromEntity) // 조회된 RecommendedBook 엔티티를 RecommendedBookDTO 로 변환
                 .orElseThrow(() -> new RecommendedBookNotFoundException(RECOMMENDED_BOOK_NOT_FOUND)); // 만약 추천 도서가 존재하지 않으면 예외 발생
+    }
+
+    // 추천 도서를 검색 조건에 따라 조회하는 메소드
+    public List<RecommendedBookDTO> findBySearchCondition(RecommendedBookSearchCondition condition) {
+        // 조회된 엔티티 리스트를 DTO 리스트로 변환하여 반환
+        return recommendedBookRepository.findBySearchCondition(condition) // 검색 조건에 따라 추천 도서를 조회
+                .stream()
+                .map(RecommendedBookDTO::fromEntity)
+                .toList();
     }
 
     // 추천 도서를 저장하는 메소드 (현재 관리자 전용)
@@ -69,6 +85,7 @@ public class RecommendedBookService {
 
         // 수정된 결과를 RequestedBookDTO 변환하여 반환
         return RecommendedBookDTO.fromEntity(recommendedBookRepository.save(recommendedBook.toBuilder()
+                .type(dto.getType() != null ? dto.getType() : recommendedBook.getType()) // Type 수정
                 .displayOrder(dto.getDisplayOrder() != null ? dto.getDisplayOrder() : recommendedBook.getDisplayOrder()) // DisplayOrder 수정
                 .status(dto.getStatus() != null ? dto.getStatus() : recommendedBook.getStatus()) // Status 수정
                 .build()
@@ -83,6 +100,49 @@ public class RecommendedBookService {
         recommendedBookRepository.deleteById(id); // ID로 추천 도서 삭제
     }
 
+    /**
+     * 지난달 판매량 TOP5 도서를 조회하여 추천 도서로 등록하는 메소드
+     * @param userId 호출한 관리자 계정의 ID
+     */
+    public List<RecommendedBookDTO> generateMonthlyBestSellerBooks(Long userId) {
+        // 1. 지난달 기간 계산
+        LocalDate startDate = LocalDate.now().minusMonths(1).withDayOfMonth(1);
+        LocalDateTime start = startDate.atStartOfDay();
+        LocalDateTime end = startDate.plusMonths(1).withDayOfMonth(1).atStartOfDay();
 
+        // 2. 지난달 판매량 TOP5 도서 조회
+        List<TopSellingBookDTO> topBooks = purchaseBookRepository.findTopSellingBooksInPeriod(start, end, 5);
 
+        // 3. 기존 MONTHLY_BEST_SELLER 추천 비활성화 (QueryDSL 사용)
+        recommendedBookRepository.deactivateRecommendedBooksByType(RecommendedBook.Type.MONTHLY_BEST_SELLER);
+
+        // 4. 시스템 관리자 계정 (1L) 조회
+        User adminUser = userRepository.findById(userId) // 호출한 관리자 계정
+                .orElseThrow(() -> new IllegalStateException("System admin user not found"));
+
+        List<RecommendedBookDTO> recommendedBooks = new ArrayList<>(); // 초기화 필수
+
+        // 5. 새로운 추천 도서 생성
+        int order = 1;
+        for (TopSellingBookDTO topSellingBookDTO : topBooks) {
+            Long bookId = topSellingBookDTO.getBookId();
+
+            Book book = bookRepository.findById(bookId)
+                    .orElseThrow(() -> new BookNotFoundException(BOOK_NOT_FOUND));
+
+            RecommendedBook recommendedBook = RecommendedBook.builder()
+                    .book(book)
+                    .createdBy(adminUser)
+                    .createdAt(LocalDateTime.now())
+                    .type(RecommendedBook.Type.MONTHLY_BEST_SELLER)
+                    .status(RecommendedBook.Status.ACTIVE)
+                    .displayOrder(order++)
+                    .build();
+
+            recommendedBookRepository.save(recommendedBook);
+            recommendedBooks.add(RecommendedBookDTO.fromEntity(recommendedBook));
+        }
+
+        return recommendedBooks; // 생성된 추천 도서 목록 반환
+    }
 }

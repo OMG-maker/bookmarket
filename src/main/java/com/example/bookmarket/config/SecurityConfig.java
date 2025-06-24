@@ -63,7 +63,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/books/**").permitAll() // ✅ 책 API는 조회만 공개
                         .requestMatchers(HttpMethod.GET, "/reviews/**").permitAll() // ✅ 리뷰 API는 조회만 공개
                         .requestMatchers(HttpMethod.GET, "/requested-books/**").permitAll() // ✅ 리뷰 API는 조회만 공개
-                        .requestMatchers(
+                        .requestMatchers(HttpMethod.GET, "/recommended-books/**").permitAll() // ✅ 리뷰 API는 조회만 공개
+                                .requestMatchers(
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",

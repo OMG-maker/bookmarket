@@ -1,13 +1,11 @@
 package com.example.bookmarket.recommendedBook.controller;
 
 import com.example.bookmarket.recommendedBook.dto.RecommendedBookDTO;
+import com.example.bookmarket.recommendedBook.dto.RecommendedBookSearchCondition;
 import com.example.bookmarket.recommendedBook.service.RecommendedBookService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -19,11 +17,14 @@ public class RecommendedBookController {
     private final RecommendedBookService recommendedBookService;
 
     // 추천 도서 조회 엔드포인트
-     @GetMapping
-     public ResponseEntity<List<RecommendedBookDTO>> getAllRecommendedBooks() {
-            List<RecommendedBookDTO> recommendedBooks = recommendedBookService.findAll();
-            return ResponseEntity.ok(recommendedBooks);
-     }
+    @GetMapping
+    public ResponseEntity<List<RecommendedBookDTO>> getAllRecommendedBooks(RecommendedBookSearchCondition condition) {
+        // List<RecommendedBookDTO> recommendedBooks = recommendedBookService.findAll();
+        // return ResponseEntity.ok(recommendedBooks);
+
+        List<RecommendedBookDTO> books = recommendedBookService.findBySearchCondition(condition);
+        return ResponseEntity.ok(books);
+    }
 
     // ID로 추천 도서를 조회하는 엔드포인트
     @GetMapping("/{id}")

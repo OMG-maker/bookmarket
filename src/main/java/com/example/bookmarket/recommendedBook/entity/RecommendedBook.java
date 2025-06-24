@@ -41,9 +41,10 @@ public class RecommendedBook {
     private Integer displayOrder; // 추천 목록 내 순서
 
     public enum Type {
-        MONTHLY, // 월간 추천 도서
-        POPULAR, // 인기 추천 도서(기간이 월에 국한되지 않음)
-        ADMIN_PICK // 관리자(서점) 추천 도서
+        MONTHLY_ADMIN_PICK, // 월별 관리자 지정
+        MONTHLY_BEST_SELLER,    // 지난달 판매순으로 자동 지정
+        WEEKLY_BEST_SELLER,     // 최근 7일 판매순 (추후 확장)
+        YEARLY_BEST_SELLER      // 연간 인기 판매순 (추후 확장)
     }
 
     public enum Status {

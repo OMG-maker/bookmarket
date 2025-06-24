@@ -50,7 +50,7 @@ public class RecommendedBookDTO {
                 .book(book) // Book 엔티티는 외부에서 주입
                 .createdBy(createdBy) // User 엔티티는 외부에서 주입
                 .createdAt(this.createdAt)
-                .type(this.type != null ? this.type : RecommendedBook.Type.MONTHLY) // 기본값 설정
+                .type(this.type != null ? this.type : RecommendedBook.Type.MONTHLY_ADMIN_PICK) // 기본값 설정
                 .status(this.status != null ? this.status : RecommendedBook.Status.ACTIVE) // 기본값 설정
                 .displayOrder(this.displayOrder != null ? this.displayOrder : 0) // 기본값 설정
                 .build();

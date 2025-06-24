@@ -10,6 +10,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
@@ -49,5 +51,18 @@ public class AdminRecommendedBookController {
         return ResponseEntity.noContent().build(); // 204 반환
     }
 
+//    generateMonthlyBestSellerBooks()
+    // 추천 도서의 월간 베스트셀러를 생성하는 엔드포인트
+    @PostMapping("/generate-monthly-best-seller")
+    public ResponseEntity<List<RecommendedBookDTO>> generateMonthlyBestSellerBooks(@AuthenticationPrincipal UserDetails userDetails) {
+        String userEmail = userDetails.getUsername();
+        Long userId = userService.findByEmail(userEmail).getId();
+
+//        recommendedBookService.generateMonthlyBestSellerBooks(userId);
+//        return ResponseEntity.ok().build(); // HTTP 200 OK 응답으로 반환
+
+        List<RecommendedBookDTO> recommendedBooks = recommendedBookService.generateMonthlyBestSellerBooks(userId);
+        return ResponseEntity.ok(recommendedBooks);
+    }
 
 }
