@@ -164,6 +164,18 @@
             if (role === 'ADMIN' || role === 'ROLE_ADMIN') {
                 document.getElementById('adminAddBookArea').style.display = 'block';
             }
+            // 도서 추가 폼 자동 채우기 (희망 도서에서 이동 시)
+            const prefill = localStorage.getItem('addBookPrefill');
+            if (prefill) {
+                try {
+                    const data = JSON.parse(prefill);
+                    if (data.title) document.getElementById('title').value = data.title;
+                    if (data.author) document.getElementById('author').value = data.author;
+                    if (data.publisher) document.getElementById('publisher') ? document.getElementById('publisher').value = data.publisher : null;
+                    if (data.isbn) document.getElementById('isbn') ? document.getElementById('isbn').value = data.isbn : null;
+                } catch (e) {}
+                localStorage.removeItem('addBookPrefill');
+            }
         });
     </script>
 </body>

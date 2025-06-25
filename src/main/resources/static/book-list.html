@@ -15,6 +15,12 @@
 <body>
     <div class="container">
         <h1>도서 목록</h1>
+        <form id="searchForm" style="margin-bottom: 10px;">
+            <label>도서명: <input type="text" id="searchTitle"></label>
+            <label>저자: <input type="text" id="searchAuthor"></label>
+            <button type="submit">검색</button>
+        </form>
+        <div id="pagination" style="margin: 10px 0;"></div>
         <table>
             <thead>
                 <tr>
@@ -30,12 +36,45 @@
         </table>
     </div>
     <script>
+        let currentPage = 1;
+        let totalPages = 1;
+        const pageSize = 10;
+        document.getElementById('searchForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            currentPage = 1;
+            fetchBooks();
+        });
+        function renderPagination() {
+            const div = document.getElementById('pagination');
+            div.innerHTML = '';
+            if (totalPages <= 1) return;
+            if (currentPage > 1) {
+                const prev = document.createElement('button');
+                prev.textContent = '이전';
+                prev.onclick = () => { currentPage--; fetchBooks(); };
+                div.appendChild(prev);
+            }
+            const pageInfo = document.createElement('span');
+            pageInfo.innerHTML = ` <strong>${currentPage}</strong> / ${totalPages} `;
+            div.appendChild(pageInfo);
+            if (currentPage < totalPages) {
+                const next = document.createElement('button');
+                next.textContent = '다음';
+                next.onclick = () => { currentPage++; fetchBooks(); };
+                div.appendChild(next);
+            }
+        }
         async function fetchBooks() {
+            const title = document.getElementById('searchTitle').value;
+            const author = document.getElementById('searchAuthor').value;
+            const url = `/books/search?title=${encodeURIComponent(title)}&author=${encodeURIComponent(author)}&page=${currentPage}&size=${pageSize}`;
             try {
-                const response = await fetch('/books/search?title=&author=&page=0&size=100');
+                const response = await fetch(url);
                 const data = await response.json();
                 if (response.ok) {
                     renderBookTable(data.content);
+                    totalPages = data.totalPages;
+                    renderPagination();
                 } else {
                     document.getElementById('bookTableBody').innerHTML = '<tr><td colspan="4">도서 목록을 불러오지 못했습니다.</td></tr>';
                 }

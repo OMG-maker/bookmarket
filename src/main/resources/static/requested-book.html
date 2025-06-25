@@ -34,7 +34,7 @@
                         <th>도서명</th>
                         <th>저자</th>
                         <th>출판사</th>
-                        <th>신청 사유</th>
+                        <th>고유번호</th>
                         <th>상태</th>
                     </tr>
                 </thead>
@@ -85,9 +85,29 @@
         function renderRequestedBookTable(books) {
             const tbody = document.getElementById('requestedBookTableBody');
             tbody.innerHTML = '';
+            const token = localStorage.getItem('accessToken');
+            let role = null;
+            if (token) {
+                try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    role = payload.role || payload.auth || null;
+                } catch (e) {}
+            }
             books.forEach(book => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${book.title}</td><td>${book.author}</td><td>${book.publisher}</td><td>${book.reason}</td><td>${book.status || ''}</td>`;
+                tr.innerHTML = `<td>${book.title}</td><td>${book.author}</td><td>${book.publisher}</td><td>${book.isbn || ''}</td><td>${book.status || ''}</td>`;
+                if (role === 'ADMIN' || role === 'ROLE_ADMIN') {
+                    tr.style.cursor = 'pointer';
+                    tr.onclick = () => {
+                        localStorage.setItem('addBookPrefill', JSON.stringify({
+                            title: book.title,
+                            author: book.author,
+                            publisher: book.publisher,
+                            isbn: book.isbn
+                        }));
+                        window.location.href = '/book.html';
+                    };
+                }
                 tbody.appendChild(tr);
             });
         }

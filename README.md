@@ -87,7 +87,6 @@ __[사용기술 및 개발환경]__
 #### __🔎 리뷰 CRUD API__
 
 - 작성자 권한 검증 로직 추가.
-- 삭제 시 soft delete 방식 적용.
 <details>
 	<summary>코드보기</summary>
 
