@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>추천 도서</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; max-width: 1200px; margin: 0 auto; padding: 0; background-color: #f5f5f5; }
+        .container { background-color: white; min-height: 100vh; }
+        #adminView { display: flex; flex-direction: column; width: 100%; gap: 0; }
+        .admin-section { width: 100%; box-sizing: border-box; padding: 30px 20px 20px 20px; border-bottom: 1px solid #eee; }
+        .admin-section:last-child { border-bottom: none; }
+        h2 { margin-top: 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        tr.book-row:hover { background-color: #e6f7ff; cursor: pointer; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.3); }
+        .modal-content { background: #fff; margin: 15% auto; padding: 30px; border-radius: 8px; width: 350px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        .modal-content button { margin: 10px 15px 0 15px; }
+        @media (max-width: 900px) {
+            .admin-section { padding: 20px 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 관리자용: 좌우 분할 -->
+        <div id="adminView" style="display:none;">
+            <div class="admin-section">
+                <h2>추천 도서 목록</h2>
+                <form id="searchForm" style="margin-bottom: 10px;">
+                    <label>
+                        타입:
+                        <select id="type">
+                            <option value="">전체</option>
+                            <option value="MONTHLY_ADMIN_PICK">월별 관리자 지정</option>
+                            <option value="MONTHLY_BEST_SELLER">월별 베스트셀러</option>
+                            <option value="WEEKLY_BEST_SELLER">주간 베스트셀러</option>
+                            <option value="YEARLY_BEST_SELLER">연간 베스트셀러</option>
+                        </select>
+                    </label>
+                    <label>
+                        시작일: <input type="date" id="fromDate">
+                    </label>
+                    <label>
+                        종료일: <input type="date" id="toDate">
+                    </label>
+                    <button type="submit">검색</button>
+                </form>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>도서명</th>
+                            <th>저자</th>
+                            <th>bookId</th>
+                            <th>지정 관리자</th>
+                            <th>생성 일시</th>
+                            <th>타입</th>
+                            <th>상태</th>
+                            <th>순서</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recommendedBookTableBody"></tbody>
+                </table>
+            </div>
+            <div class="admin-section">
+                <h2>전체 도서 목록</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>도서명</th>
+                            <th>저자</th>
+                            <th>가격</th>
+                            <th>재고</th>
+                        </tr>
+                    </thead>
+                    <tbody id="allBookTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+        <!-- 일반/비로그인용: 추천 도서 목록만 -->
+        <div id="userView" style="display:none; width:100%;">
+            <h2>추천 도서 목록</h2>
+            <form id="searchForm" style="margin-bottom: 10px;">
+                <label>
+                    타입:
+                    <select id="type">
+                        <option value="">전체</option>
+                        <option value="MONTHLY_ADMIN_PICK">월별 관리자 지정</option>
+                        <option value="MONTHLY_BEST_SELLER">월별 베스트셀러</option>
+                        <option value="WEEKLY_BEST_SELLER">주간 베스트셀러</option>
+                        <option value="YEARLY_BEST_SELLER">연간 베스트셀러</option>
+                    </select>
+                </label>
+                <label>
+                    시작일: <input type="date" id="fromDate">
+                </label>
+                <label>
+                    종료일: <input type="date" id="toDate">
+                </label>
+                <button type="submit">검색</button>
+            </form>
+            <table>
+                <thead>
+                    <tr>
+                        <th>도서명</th>
+                        <th>저자</th>
+                        <th>bookId</th>
+                        <th>지정 관리자</th>
+                        <th>생성 일시</th>
+                        <th>타입</th>
+                        <th>상태</th>
+                        <th>순서</th>
+                    </tr>
+                </thead>
+                <tbody id="recommendedBookTableBodyUser"></tbody>
+            </table>
+        </div>
+        <!-- 모달 -->
+        <div id="modal" class="modal">
+            <div class="modal-content">
+                <p id="modalText"></p>
+                <button id="modalConfirmBtn">확인</button>
+                <button id="modalCancelBtn">취소</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        // 권한 판별
+        function getRoleFromToken(token) {
+            if (!token) return null;
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                return payload.role || payload.auth || null;
+            } catch (e) { return null; }
+        }
+        // 추천 도서 목록 불러오기
+        let currentView = 'user';
+        document.getElementById('searchForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            fetchRecommendedBooks(currentView);
+        });
+        async function fetchRecommendedBooks(view) {
+            currentView = view;
+            const type = document.getElementById('type')?.value || '';
+            const fromDate = document.getElementById('fromDate')?.value || '';
+            const toDate = document.getElementById('toDate')?.value || '';
+            let url = '/recommended-books?';
+            if (type) url += `type=${type}&`;
+            if (fromDate) url += `fromDate=${fromDate}&`;
+            if (toDate) url += `toDate=${toDate}&`;
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                if (response.ok) {
+                    if (view === 'admin') renderRecommendedBookTable(data, 'recommendedBookTableBody');
+                    else renderRecommendedBookTable(data, 'recommendedBookTableBodyUser');
+                } else {
+                    document.getElementById(view === 'admin' ? 'recommendedBookTableBody' : 'recommendedBookTableBodyUser').innerHTML = '<tr><td colspan="5">목록을 불러오지 못했습니다.</td></tr>';
+                }
+            } catch (e) {
+                document.getElementById(view === 'admin' ? 'recommendedBookTableBody' : 'recommendedBookTableBodyUser').innerHTML = `<tr><td colspan="5">오류: ${e.message}</td></tr>`;
+            }
+        }
+        async function renderRecommendedBookTable(books, tbodyId) {
+            const tbody = document.getElementById(tbodyId);
+            tbody.innerHTML = '';
+            for (const book of books) {
+                let title = '', author = '';
+                if (book.bookId) {
+                    try {
+                        const res = await fetch(`/books/${book.bookId}`);
+                        if (res.ok) {
+                            const bookInfo = await res.json();
+                            title = bookInfo.title;
+                            author = bookInfo.author;
+                        }
+                    } catch (e) {}
+                }
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${title}</td><td>${author}</td><td>${book.bookId || ''}</td><td>${book.createdBy || ''}</td><td>${book.createdAt || ''}</td><td>${book.type || ''}</td><td>${book.status || ''}</td><td>${book.displayOrder || ''}</td>`;
+                tbody.appendChild(tr);
+            }
+        }
+        // 전체 도서 목록 불러오기 (관리자)
+        async function fetchAllBooks() {
+            try {
+                const response = await fetch('/books/search?title=&author=&page=0&size=100');
+                const data = await response.json();
+                if (response.ok) {
+                    renderAllBookTable(data.content);
+                } else {
+                    document.getElementById('allBookTableBody').innerHTML = '<tr><td colspan="4">도서 목록을 불러오지 못했습니다.</td></tr>';
+                }
+            } catch (e) {
+                document.getElementById('allBookTableBody').innerHTML = `<tr><td colspan="4">오류: ${e.message}</td></tr>`;
+            }
+        }
+        function renderAllBookTable(books) {
+            const tbody = document.getElementById('allBookTableBody');
+            tbody.innerHTML = '';
+            books.forEach(book => {
+                const tr = document.createElement('tr');
+                tr.className = 'book-row';
+                tr.onclick = () => onBookClick(book.id, book.title);
+                tr.innerHTML = `<td>${book.title}</td><td>${book.author}</td><td>${book.price}원</td><td>${book.stock}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+        // 모달 관련
+        let selectedBookId = null;
+        let selectedBookTitle = '';
+        function onBookClick(bookId, bookTitle) {
+            selectedBookId = bookId;
+            selectedBookTitle = bookTitle;
+            document.getElementById('modalText').textContent = `"${bookTitle}"을(를) 이 달의 관리자 추천도서로 등록하시겠습니까?`;
+            document.getElementById('modal').style.display = 'block';
+        }
+        document.getElementById('modalConfirmBtn').onclick = async function() {
+            const token = localStorage.getItem('accessToken');
+            if (!selectedBookId) return;
+            try {
+                await fetch('/admin/recommended-books', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ bookId: selectedBookId, type: 'MONTHLY_ADMIN_PICK' })
+                });
+                document.getElementById('modal').style.display = 'none';
+                fetchRecommendedBooks('admin');
+            } catch (e) {
+                alert('추천 등록 실패: ' + e.message);
+            }
+        };
+        document.getElementById('modalCancelBtn').onclick = function() {
+            document.getElementById('modal').style.display = 'none';
+        };
+        // 진입 시 권한 분기 및 데이터 로드
+        window.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('accessToken');
+            const role = getRoleFromToken(token);
+            if (role === 'ADMIN' || role === 'ROLE_ADMIN') {
+                document.getElementById('adminView').style.display = 'flex';
+                document.getElementById('userView').style.display = 'none';
+                fetchRecommendedBooks('admin');
+                fetchAllBooks();
+            } else {
+                document.getElementById('adminView').style.display = 'none';
+                document.getElementById('userView').style.display = 'block';
+                fetchRecommendedBooks('user');
+            }
+        });
+    </script>
+</body>
+</html> 

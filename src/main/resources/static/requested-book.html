@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>희망 도서 신청</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; max-width: 800px; margin: 0 auto; padding: 0; background-color: #f5f5f5; }
+        .container { background-color: white; min-height: 100vh; display: flex; flex-direction: column; }
+        .top-half { flex: 1; padding: 30px 20px 10px 20px; }
+        .bottom-half { flex: 1; padding: 10px 20px 30px 20px; border-top: 1px solid #eee; }
+        h1 { margin-bottom: 10px; }
+        h2 { margin-top: 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; }
+        input, textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+        .response { margin-top: 20px; padding: 10px; border-radius: 4px; }
+        .success { background-color: #dff0d8; color: #3c763d; }
+        .error { background-color: #f2dede; color: #a94442; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="top-half">
+            <h2>희망 도서 목록</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>도서명</th>
+                        <th>저자</th>
+                        <th>출판사</th>
+                        <th>신청 사유</th>
+                        <th>상태</th>
+                    </tr>
+                </thead>
+                <tbody id="requestedBookTableBody"></tbody>
+            </table>
+        </div>
+        <div class="bottom-half">
+            <h1>희망 도서 신청</h1>
+            <form id="requestForm">
+                <div class="form-group">
+                    <label for="title">도서명:</label>
+                    <input type="text" id="title" required>
+                </div>
+                <div class="form-group">
+                    <label for="author">저자:</label>
+                    <input type="text" id="author" required>
+                </div>
+                <div class="form-group">
+                    <label for="publisher">출판사:</label>
+                    <input type="text" id="publisher" required>
+                </div>
+                <div class="form-group">
+                    <label for="isbn">고유번호:</label>
+                    <textarea id="isbn" required></textarea>
+                </div>
+                <button type="submit">신청하기</button>
+            </form>
+            <div id="requestResponse" class="response"></div>
+        </div>
+    </div>
+    <script>
+        async function fetchRequestedBooks() {
+            const token = localStorage.getItem('accessToken');
+            try {
+                const response = await fetch('/requested-books', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    renderRequestedBookTable(data);
+                } else {
+                    document.getElementById('requestedBookTableBody').innerHTML = '<tr><td colspan="5">목록을 불러오지 못했습니다.</td></tr>';
+                }
+            } catch (e) {
+                document.getElementById('requestedBookTableBody').innerHTML = `<tr><td colspan="5">오류: ${e.message}</td></tr>`;
+            }
+        }
+        function renderRequestedBookTable(books) {
+            const tbody = document.getElementById('requestedBookTableBody');
+            tbody.innerHTML = '';
+            books.forEach(book => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${book.title}</td><td>${book.author}</td><td>${book.publisher}</td><td>${book.reason}</td><td>${book.status || ''}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchRequestedBooks();
+        });
+        document.getElementById('requestForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('title').value;
+            const author = document.getElementById('author').value;
+            const publisher = document.getElementById('publisher').value;
+            const isbn = document.getElementById('isbn').value;
+            const responseDiv = document.getElementById('requestResponse');
+            const token = localStorage.getItem('accessToken');
+            try {
+                const response = await fetch('/requested-books', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ title, author, publisher, isbn })
+                });
+                if (response.ok) {
+                    responseDiv.className = 'response success';
+                    responseDiv.textContent = '희망 도서가 성공적으로 신청되었습니다!';
+                    fetchRequestedBooks(); // 신청 후 목록 갱신
+                } else {
+                    responseDiv.className = 'response error';
+                    responseDiv.textContent = '신청에 실패했습니다.';
+                }
+            } catch (e) {
+                responseDiv.className = 'response error';
+                responseDiv.textContent = '오류: ' + e.message;
+            }
+        });
+    </script>
+</body>
+</html> 

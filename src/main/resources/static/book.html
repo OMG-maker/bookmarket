@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>도서 관리</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f5f5f5; }
+        .container { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; }
+        input, select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+        .response { margin-top: 20px; padding: 10px; border-radius: 4px; }
+        .success { background-color: #dff0d8; color: #3c763d; }
+        .error { background-color: #f2dede; color: #a94442; }
+        .book-list { margin-top: 20px; }
+        .book-item { padding: 10px; border-bottom: 1px solid #eee; }
+        .book-item:last-child { border-bottom: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>도서 관리</h1>
+        <form id="searchForm">
+            <div class="form-group">
+                <label for="searchTitle">도서명:</label>
+                <input type="text" id="searchTitle" placeholder="도서명 입력">
+            </div>
+            <div class="form-group">
+                <label for="searchAuthor">저자명:</label>
+                <input type="text" id="searchAuthor" placeholder="저자명 입력">
+            </div>
+            <div class="form-group">
+                <label for="searchPage">페이지:</label>
+                <input type="number" id="searchPage" value="0" min="0">
+            </div>
+            <div class="form-group">
+                <label for="searchSize">페이지 크기:</label>
+                <input type="number" id="searchSize" value="10" min="1">
+            </div>
+            <button type="submit">검색</button>
+        </form>
+        <div id="searchResponse" class="response"></div>
+        <div id="bookList" class="book-list"></div>
+        <hr>
+        <!-- 도서 추가 영역: 관리자만 보임 -->
+        <div id="adminAddBookArea" style="display:none;">
+            <h2>도서 추가 (관리자)</h2>
+            <form id="addBookForm">
+                <div class="form-group">
+                    <label for="title">도서명:</label>
+                    <input type="text" id="title" required>
+                </div>
+                <div class="form-group">
+                    <label for="author">저자:</label>
+                    <input type="text" id="author" required>
+                </div>
+                <div class="form-group">
+                    <label for="isbn">고유번호:</label>
+                    <input type="text" id="isbn" required>
+                </div>
+                <div class="form-group">
+                    <label for="publishedAt">출판일:</label>
+                    <input type="datetime-local" id="publishedAt" required>
+                </div>
+                <div class="form-group">
+                    <label for="stock">개수:</label>
+                    <input type="number" id="stock" required>
+                </div>
+                <div class="form-group">
+                    <label for="price">가격:</label>
+                    <input type="number" id="price" required>
+                </div>
+                <button type="submit">도서 추가</button>
+            </form>
+            <div id="addBookResponse" class="response"></div>
+        </div>
+    </div>
+    <script>
+        // 도서 검색
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('searchTitle').value;
+            const author = document.getElementById('searchAuthor').value;
+            const page = document.getElementById('searchPage').value || 0;
+            const size = document.getElementById('searchSize').value || 10;
+            const responseDiv = document.getElementById('searchResponse');
+            try {
+                const url = `/books/search?title=${encodeURIComponent(title)}&author=${encodeURIComponent(author)}&page=${page}&size=${size}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                if (response.ok) {
+                    responseDiv.className = 'response success';
+                    responseDiv.textContent = `검색 결과: ${data.content.length}건 (총 ${data.totalElements}건)`;
+                    renderBookList(data.content);
+                } else {
+                    responseDiv.className = 'response error';
+                    responseDiv.textContent = data.message || '검색 실패';
+                }
+            } catch (error) {
+                responseDiv.className = 'response error';
+                responseDiv.textContent = '오류: ' + error.message;
+            }
+        });
+        // 도서 목록 렌더링
+        function renderBookList(books) {
+            const listDiv = document.getElementById('bookList');
+            listDiv.innerHTML = '';
+            books.forEach(book => {
+                const div = document.createElement('div');
+                div.className = 'book-item';
+                div.innerHTML = `<strong>${book.title}</strong> / ${book.author} / ${book.stock}개 / ${book.price}원`;
+                listDiv.appendChild(div);
+            });
+        }
+        // 도서 추가
+        document.getElementById('addBookForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('title').value;
+            const author = document.getElementById('author').value;
+            const isbn = document.getElementById('isbn').value;
+            const publishedAt = document.getElementById('publishedAt').value;
+            const stock = document.getElementById('stock').value;
+            const price = document.getElementById('price').value;
+            const responseDiv = document.getElementById('addBookResponse');
+            const token = localStorage.getItem('accessToken');
+            try {
+                const response = await fetch('/admin/books', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ title, author, isbn, publishedAt, stock, price })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    responseDiv.className = 'response success';
+                    responseDiv.textContent = '도서가 추가되었습니다.';
+                } else {
+                    responseDiv.className = 'response error';
+                    responseDiv.textContent = data.message || '도서 추가 실패';
+                }
+            } catch (error) {
+                responseDiv.className = 'response error';
+                responseDiv.textContent = '오류: ' + error.message;
+            }
+        });
+        // 관리자만 도서 추가 영역 보이기
+        function getRoleFromToken(token) {
+            if (!token) return null;
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                return payload.role || payload.auth || null;
+            } catch (e) {
+                return null;
+            }
+        }
+        window.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('accessToken');
+            const role = getRoleFromToken(token);
+            if (role === 'ADMIN' || role === 'ROLE_ADMIN') {
+                document.getElementById('adminAddBookArea').style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html> 

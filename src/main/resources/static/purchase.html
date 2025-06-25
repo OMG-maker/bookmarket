@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>구매 신청</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f5f5f5; }
+        .container { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; }
+        input, select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+        .response { margin-top: 20px; padding: 10px; border-radius: 4px; }
+        .success { background-color: #dff0d8; color: #3c763d; }
+        .error { background-color: #f2dede; color: #a94442; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>구매 신청</h1>
+        <div id="bookList" class="book-list"></div>
+        <div id="cartArea" style="margin-top:30px;">
+            <h2>장바구니</h2>
+            <div id="cartList"></div>
+            <div id="cartSummary" style="margin-top:10px;"></div>
+            <button id="purchaseCartBtn">구매 신청</button>
+            <div id="cartResponse" class="response"></div>
+        </div>
+    </div>
+    <script>
+        let userId = null;
+        // userId를 /users/me로 조회
+        async function fetchUserId() {
+            const token = localStorage.getItem('accessToken');
+            if (!token) return null;
+            try {
+                const res = await fetch('/users/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const user = await res.json();
+                    return user.id;
+                }
+            } catch (e) {}
+            return null;
+        }
+        // 책 전체 목록 불러오기
+        async function fetchBooks() {
+            try {
+                const response = await fetch('/books/search?title=&author=&page=&size=');
+                const data = await response.json();
+                if (response.ok) {
+                    renderBookList(data.content);
+                } else {
+                    document.getElementById('bookList').innerHTML = '책 목록을 불러오지 못했습니다.';
+                }
+            } catch (e) {
+                document.getElementById('bookList').innerHTML = '오류: ' + e.message;
+            }
+        }
+        // 책 목록 렌더링
+        function renderBookList(books) {
+            const listDiv = document.getElementById('bookList');
+            listDiv.innerHTML = '';
+            books.forEach(book => {
+                const div = document.createElement('div');
+                div.className = 'book-item';
+                div.innerHTML = `
+                    <strong>${book.title}</strong> / 저자 : ${book.author} / 가격 : ${book.price}원 / 재고 : ${book.stock}개
+                    <input type="number" id="qty_${book.id}" min="1" value="1" style="width:60px; margin-left:10px;">
+                    <button onclick="addToCart(${book.id})">장바구니에 담기</button>
+                `;
+                listDiv.appendChild(div);
+            });
+        }
+        // 책 정보 캐시
+        const bookCache = {};
+        // 장바구니 렌더링
+        async function renderCart(cart) {
+            const cartListDiv = document.getElementById('cartList');
+            cartListDiv.innerHTML = '';
+            let total = 0, count = 0;
+            if (cart && cart.cartBooks && cart.cartBooks.length > 0) {
+                for (const item of cart.cartBooks) {
+                    let book = bookCache[item.bookId];
+                    if (!book) {
+                        try {
+                            const res = await fetch(`/books/${item.bookId}`);
+                            if (res.ok) {
+                                book = await res.json();
+                                bookCache[item.bookId] = book;
+                            }
+                        } catch (e) {}
+                    }
+                    const price = book ? book.price : 0;
+                    total += price * item.quantity;
+                    count += item.quantity;
+                    cartListDiv.innerHTML += `<div>${item.title} - <input type='number' id='cart_qty_${item.bookId}' value='${item.quantity}' min='1' style='width:60px;'>권 (${price}원/권)
+                    <button onclick='updateCartQty(${item.bookId})'>수정</button></div>`;
+                }
+            } else {
+                cartListDiv.innerHTML = '장바구니가 비어 있습니다.';
+            }
+            document.getElementById('cartSummary').innerHTML = `<strong>총 ${count}권, 총액: ${total}원</strong>`;
+        }
+        // 장바구니 불러오기
+        async function fetchCart() {
+            const token = localStorage.getItem('accessToken');
+            if (!token) return;
+
+            try {
+                const response = await fetch('/carts/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const cart = await response.json();
+                    renderCart(cart);
+                } else {
+                    document.getElementById('cartList').innerHTML = '장바구니를 불러오지 못했습니다.';
+                }
+            } catch (e) {
+                document.getElementById('cartList').innerHTML = '오류: ' + e.message;
+            }
+        }
+        // 장바구니에 담기
+        window.addToCart = async function(bookId) {
+            const qty = parseInt(document.getElementById('qty_' + bookId).value) || 1;
+            const token = localStorage.getItem('accessToken');
+            if (!userId) {
+                alert('유저 정보를 불러오지 못했습니다.');
+                return;
+            }
+            try {
+                const response = await fetch('/carts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        userId: userId,
+                        bookId: bookId,
+                        quantity: qty
+                    })
+                });
+                if (response.ok) {
+                    document.getElementById('cartResponse').className = 'success';
+                    document.getElementById('cartResponse').textContent = '장바구니에 책이 성공적으로 추가되었습니다.';
+                    await fetchCart();
+                } else {
+                    document.getElementById('cartResponse').className = 'error';
+                    document.getElementById('cartResponse').textContent = '장바구니에 책을 추가하지 못했습니다.';
+                }
+            } catch (e) {
+                document.getElementById('cartResponse').className = 'error';
+                document.getElementById('cartResponse').textContent = '오류: ' + e.message;
+            }
+        }
+        // 장바구니 수량 수정
+        window.updateCartQty = async function(bookId) {
+            const qty = parseInt(document.getElementById('cart_qty_' + bookId).value) || 1;
+            const token = localStorage.getItem('accessToken');
+            if (!userId) {
+                alert('유저 정보를 불러오지 못했습니다.');
+                return;
+            }
+            try {
+                const response = await fetch('/carts', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ userId, bookId, quantity: qty })
+                });
+                if (response.ok) {
+                    await fetchCart();
+                } else {
+                    alert('수량 수정 실패');
+                }
+            } catch (e) {
+                alert('오류: ' + e.message);
+            }
+        }
+        // 구매 신청
+        document.getElementById('purchaseCartBtn').onclick = async function() {
+            const token = localStorage.getItem('accessToken');
+            const responseDiv = document.getElementById('cartResponse');
+            try {
+                const response = await fetch('/purchases', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    responseDiv.className = 'response success';
+                    responseDiv.textContent = data.message || '구매 신청이 완료되었습니다!';
+                    await fetchCart();
+                } else {
+                    responseDiv.className = 'response error';
+                    responseDiv.textContent = '구매 신청 실패';
+                }
+            } catch (e) {
+                responseDiv.className = 'response error';
+                responseDiv.textContent = '오류: ' + e.message;
+            }
+        };
+        // 초기화
+        async function init() {
+            userId = await fetchUserId();
+            await fetchBooks();
+            await fetchCart();
+        }
+        init();
+    </script>
+</body>
+</html>

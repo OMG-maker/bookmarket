@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>리뷰 관리</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f5f5f5; }
+        .container { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; }
+        input, textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+        .response { margin-top: 20px; padding: 10px; border-radius: 4px; }
+        .success { background-color: #dff0d8; color: #3c763d; }
+        .error { background-color: #f2dede; color: #a94442; }
+        .review-list { margin-top: 20px; }
+        .review-item { padding: 10px; border-bottom: 1px solid #eee; }
+        .review-item:last-child { border-bottom: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>리뷰 관리</h1>
+        <form id="addReviewForm">
+            <div class="form-group">
+                <label for="bookId">도서 ID:</label>
+                <input type="number" id="bookId" required>
+            </div>
+            <div class="form-group">
+                <label for="content">리뷰 내용:</label>
+                <textarea id="content" required></textarea>
+            </div>
+            <button type="submit">리뷰 등록</button>
+        </form>
+        <div id="addReviewResponse" class="response"></div>
+        <hr>
+        <h2>리뷰 목록 조회</h2>
+        <form id="fetchReviewsForm">
+            <div class="form-group">
+                <label for="fetchBookId">도서 ID:</label>
+                <input type="number" id="fetchBookId" required>
+            </div>
+            <button type="submit">리뷰 조회</button>
+        </form>
+        <div id="fetchReviewsResponse" class="response"></div>
+        <div id="reviewList" class="review-list"></div>
+    </div>
+    <script>
+        // 리뷰 등록
+        document.getElementById('addReviewForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const bookId = document.getElementById('bookId').value;
+            const content = document.getElementById('content').value;
+            const responseDiv = document.getElementById('addReviewResponse');
+            const token = localStorage.getItem('accessToken');
+            try {
+                const response = await fetch('/reviews', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ bookId, content })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    responseDiv.className = 'response success';
+                    responseDiv.textContent = '리뷰가 등록되었습니다.';
+                } else {
+                    responseDiv.className = 'response error';
+                    responseDiv.textContent = data.message || '리뷰 등록 실패';
+                }
+            } catch (error) {
+                responseDiv.className = 'response error';
+                responseDiv.textContent = '오류: ' + error.message;
+            }
+        });
+        // 리뷰 조회
+        document.getElementById('fetchReviewsForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const bookId = document.getElementById('fetchBookId').value;
+            const responseDiv = document.getElementById('fetchReviewsResponse');
+            try {
+                const response = await fetch(`/reviews?bookId=${bookId}`);
+                const reviews = await response.json();
+                if (response.ok) {
+                    responseDiv.className = 'response success';
+                    responseDiv.textContent = `리뷰 ${reviews.length}건`;
+                    renderReviewList(reviews);
+                } else {
+                    responseDiv.className = 'response error';
+                    responseDiv.textContent = reviews.message || '리뷰 조회 실패';
+                }
+            } catch (error) {
+                responseDiv.className = 'response error';
+                responseDiv.textContent = '오류: ' + error.message;
+            }
+        });
+        // 리뷰 목록 렌더링
+        function renderReviewList(reviews) {
+            const listDiv = document.getElementById('reviewList');
+            listDiv.innerHTML = '';
+            reviews.forEach(review => {
+                const div = document.createElement('div');
+                div.className = 'review-item';
+                div.innerHTML = `<strong>리뷰 ID:</strong> ${review.id} <br> <strong>내용:</strong> ${review.content} <br> <button onclick="deleteReview(${review.id})">삭제</button>`;
+                listDiv.appendChild(div);
+            });
+        }
+        // 리뷰 삭제
+        async function deleteReview(reviewId) {
+            const token = localStorage.getItem('accessToken');
+            if (!confirm('정말 삭제하시겠습니까?')) return;
+            try {
+                const response = await fetch(`/reviews/${reviewId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (response.ok) {
+                    alert('리뷰가 삭제되었습니다.');
+                    document.getElementById('fetchReviewsForm').dispatchEvent(new Event('submit'));
+                } else {
+                    alert('리뷰 삭제 실패');
+                }
+            } catch (error) {
+                alert('오류: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html> 

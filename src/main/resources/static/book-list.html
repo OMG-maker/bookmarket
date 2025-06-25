@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>도서 목록</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f5f5f5; }
+        .container { background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>도서 목록</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th>도서명</th>
+                    <th>저자</th>
+                    <th>가격</th>
+                    <th>재고</th>
+                </tr>
+            </thead>
+            <tbody id="bookTableBody">
+                <!-- 도서 목록이 여기에 표시됩니다 -->
+            </tbody>
+        </table>
+    </div>
+    <script>
+        async function fetchBooks() {
+            try {
+                const response = await fetch('/books/search?title=&author=&page=0&size=100');
+                const data = await response.json();
+                if (response.ok) {
+                    renderBookTable(data.content);
+                } else {
+                    document.getElementById('bookTableBody').innerHTML = '<tr><td colspan="4">도서 목록을 불러오지 못했습니다.</td></tr>';
+                }
+            } catch (e) {
+                document.getElementById('bookTableBody').innerHTML = `<tr><td colspan="4">오류: ${e.message}</td></tr>`;
+            }
+        }
+        function renderBookTable(books) {
+            const tbody = document.getElementById('bookTableBody');
+            tbody.innerHTML = '';
+            books.forEach(book => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${book.title}</td><td>${book.author}</td><td>${book.price}원</td><td>${book.stock}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+        window.addEventListener('DOMContentLoaded', fetchBooks);
+    </script>
+</body>
+</html> 

@@ -82,13 +82,27 @@
             <h1>북마켓</h1>
             <div class="user-info">
                 <span id="userEmail"></span>
-                <button id="logoutBtn">로그아웃</button>
+                <button id="authBtn"></button>
+            </div>
+        </div>
+        <div id="dashboard" style="margin-bottom: 30px;">
+            <h2>대시보드</h2>
+            <div id="summaryStats">
+                <span>도서 수: <strong id="bookCount">-</strong></span> |
+                <span>구매 신청 수: <strong id="purchaseCount">-</strong></span> |
+                <span>리뷰 수: <strong id="reviewCount">-</strong></span>
+            </div>
+            <div style="margin-top: 10px;">
+                <a href="/book.html"><button>도서 관리</button></a>
+                <a href="/book-list.html"><button>도서 목록</button></a>
+                <a href="/purchase.html"><button>구매 신청</button></a>
+                <a href="/review.html"><button>리뷰 관리</button></a>
+                <a href="/requested-book.html"><button>희망 도서 신청</button></a>
+                <a href="/recommended-book.html"><button>추천 도서</button></a>
             </div>
         </div>
         <div id="mainContent">
-            <div id="userList" class="user-list">
-                <!-- 사용자 목록이 여기에 동적으로 추가됩니다 -->
-            </div>
+            <div id="userList" class="user-list" style="display:none;"></div>
             <div id="loginPrompt" class="login-prompt" style="display: none;">
                 <h2>로그인이 필요합니다</h2>
                 <p>사용자 목록을 보려면 <a href="/index.html">로그인</a>해주세요.</p>
@@ -108,7 +122,7 @@
             }
 
             try {
-                const response = await fetch('/users', {
+                const response = await fetch('/admin/users', {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -142,48 +156,69 @@
             }
         }
 
-        // 페이지 로드 시 사용자 목록 가져오기
+        // 대시보드 요약 정보 불러오기
+        async function fetchSummary() {
+            try {
+                const [bookRes, purchaseRes, reviewRes] = await Promise.all([
+                    fetch('/books'),
+                    fetch('/purchases'),
+                    fetch('/reviews')
+                ]);
+                const books = bookRes.ok ? await bookRes.json() : [];
+                const purchases = purchaseRes.ok ? await purchaseRes.json() : [];
+                const reviews = reviewRes.ok ? await reviewRes.json() : [];
+                document.getElementById('bookCount').textContent = books.length;
+                document.getElementById('purchaseCount').textContent = purchases.length;
+                document.getElementById('reviewCount').textContent = reviews.length;
+            } catch (e) {
+                document.getElementById('bookCount').textContent = '-';
+                document.getElementById('purchaseCount').textContent = '-';
+                document.getElementById('reviewCount').textContent = '-';
+            }
+        }
+
+        // 페이지 로드 시 사용자 목록 및 대시보드 정보 가져오기
         window.addEventListener('load', () => {
             const token = localStorage.getItem('accessToken');
+            let role = null;
+            const authBtn = document.getElementById('authBtn');
+            const userEmailSpan = document.getElementById('userEmail');
             if (token) {
-                document.getElementById('userEmail').textContent = localStorage.getItem('userEmail');
-            }
-            fetchUsers();
-        });
-
-        // 로그아웃 처리
-        document.getElementById('logoutBtn').addEventListener('click', async () => {
-            const token = localStorage.getItem('accessToken');
-            if (!token) {
-                window.location.href = '/index.html';
-                return;
-            }
-
-            try {
-                const response = await fetch('/auth/logout', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                if (response.ok) {
-                    // 로컬 스토리지 초기화
+                userEmailSpan.textContent = localStorage.getItem('userEmail');
+                try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    role = payload.role || payload.auth || null;
+                } catch (e) {}
+                // 로그인 상태: 로그아웃 버튼
+                authBtn.textContent = '로그아웃';
+                authBtn.onclick = async () => {
                     localStorage.removeItem('accessToken');
                     localStorage.removeItem('refreshToken');
                     localStorage.removeItem('userEmail');
-                    
-                    // 페이지 새로고침
                     window.location.reload();
-                } else {
-                    const data = await response.json();
-                    document.getElementById('response').className = 'response error';
-                    document.getElementById('response').textContent = data.message || '로그아웃 실패';
-                }
-            } catch (error) {
-                document.getElementById('response').className = 'response error';
-                document.getElementById('response').textContent = '오류가 발생했습니다: ' + error.message;
+                };
+            } else {
+                userEmailSpan.textContent = '';
+                // 비로그인 상태: 로그인 버튼
+                authBtn.textContent = '로그인';
+                authBtn.onclick = () => {
+                    window.location.href = '/index.html';
+                };
             }
+            // 안내문구/사용자 목록 표시
+            if (token) {
+                document.getElementById('loginPrompt').style.display = 'none';
+                if (role === 'ADMIN' || role === 'ROLE_ADMIN') {
+                    document.getElementById('userList').style.display = 'block';
+                    fetchUsers();
+                } else {
+                    document.getElementById('userList').style.display = 'none';
+                }
+            } else {
+                document.getElementById('loginPrompt').style.display = 'none'; // 안내문구도 숨김
+                document.getElementById('userList').style.display = 'none';
+            }
+            fetchSummary();
         });
     </script>
 </body>
