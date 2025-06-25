@@ -44,14 +44,13 @@ public class ReviewController {
     @PostMapping
     public ResponseEntity<ReviewDTO> createReview(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam Long bookId,
             @RequestBody ReviewDTO dto) {
 
         // 현재 로그인한 사용자의 email 가져오기
         String userEmail = userDetails.getUsername();
         Long userId = userService.findByEmail(userEmail).getId();
 
-        ReviewDTO savedReview = reviewService.save(dto, userId, bookId);
+        ReviewDTO savedReview = reviewService.save(dto, userId);
         return ResponseEntity.ok(savedReview);
     }
 

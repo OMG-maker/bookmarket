@@ -52,13 +52,13 @@ public class ReviewService {
     }
 
     // 리뷰를 저장하는 메소드
-    public ReviewDTO save(ReviewDTO dto, Long userId, Long bookId) { // (dto, userId, bookId)
+    public ReviewDTO save(ReviewDTO dto, Long userId) { // (dto, userId, bookId)
         // 로그인한 사용자 찾기
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND));
 
         // 책 찾기
-        Book book = bookRepository.findById(bookId)
+        Book book = bookRepository.findById(dto.getBookId())
                 .orElseThrow(() -> new BookNotFoundException(BOOK_NOT_FOUND));
 
         // 이전 toEntity() 방법
