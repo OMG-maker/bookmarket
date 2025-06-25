@@ -9,6 +9,7 @@ import com.example.bookmarket.cart.exception.CartNotFoundException;
 import com.example.bookmarket.cart.repository.CartRepository;
 import com.example.bookmarket.cartBook.entity.CartBook;
 import com.example.bookmarket.cartBook.repository.CartBookRepository;
+import com.example.bookmarket.purchase.dto.PurchaseDTO;
 import com.example.bookmarket.purchase.entity.Purchase;
 import com.example.bookmarket.purchase.exception.InsufficientStockException;
 import com.example.bookmarket.purchase.exception.PaymentFailedException;
@@ -98,6 +99,14 @@ public class PurchaseService {
 //
 //        return purchase.getId();
 //    }
+
+//    findAll()
+    public List<PurchaseDTO> findAll() {
+        return purchaseRepository.findAll() // 모든 사용자 엔티티를 조회
+                .stream()// 조회된 User 엔티티 리스트를 스트림으로 변환
+                .map(PurchaseDTO::fromEntity) // 각 User 엔티티를 UserDTO로 변환
+                .toList(); // Java 16+에서 불변 리스트로 반환 // Java 8+에서는 collect(Collectors.toList())를 사용
+    }
 
     public Long createPurchase(String userEmail) {
         // 1. 인증된 유저 찾기

@@ -38,10 +38,11 @@ public class BookController {
     public ResponseEntity<Page<BookDTO>> searchBooks(
             @RequestParam(defaultValue = "") String title,
             @RequestParam(defaultValue = "") String author,
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "1") int page, // 👉 1부터 시작하게
             @RequestParam(defaultValue = "10") int size) {
 
-        Pageable pageable = PageRequest.of(page, size);
+//        Pageable pageable = PageRequest.of(page, size);
+        Pageable pageable = PageRequest.of(Math.max(0, page - 1), size); // 👈 프론트 1부터 보냈을 때 0 기반으로 보정
         Page<BookDTO> result = bookService.searchBooks(title, author, pageable);
         return ResponseEntity.ok(result);
     }
