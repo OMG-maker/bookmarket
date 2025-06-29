@@ -18,12 +18,26 @@
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.3); }
         .modal-content { background: #fff; margin: 15% auto; padding: 30px; border-radius: 8px; width: 350px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
         .modal-content button { margin: 10px 15px 0 15px; }
+        .home-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .home-btn:hover {
+            background-color: #45a049;
+        }
         @media (max-width: 900px) {
             .admin-section { padding: 20px 5px; }
         }
     </style>
 </head>
 <body>
+    <div style="position: absolute; top: 20px; right: 30px; z-index: 100;">
+        <button class="home-btn" onclick="location.href='/main.html'">홈 화면으로 이동</button>
+    </div>
     <div class="container">
         <!-- 관리자용: 좌우 분할 -->
         <div id="adminView" style="display:none;">
@@ -65,7 +79,7 @@
                 </table>
             </div>
             <div class="admin-section">
-                <h2>전체 도서 목록</h2>
+                <h2>추천 도서 등록 선택 (관리자 전용)</h2>
                 <table>
                     <thead>
                         <tr>
@@ -125,6 +139,15 @@
                 <button id="modalCancelBtn">취소</button>
             </div>
         </div>
+        
+        <!-- 비활성화용 모달 -->
+        <div id="deactivateModal" class="modal">
+            <div class="modal-content">
+                <p id="deactivateModalText"></p>
+                <button id="deactivateModalConfirmBtn">확인</button>
+                <button id="deactivateModalCancelBtn">취소</button>
+            </div>
+        </div>
     </div>
     <script>
         // 권한 판별
@@ -166,6 +189,12 @@
         async function renderRecommendedBookTable(books, tbodyId) {
             const tbody = document.getElementById(tbodyId);
             tbody.innerHTML = '';
+            
+            // 현재 사용자의 권한 확인
+            const token = localStorage.getItem('accessToken');
+            const role = getRoleFromToken(token);
+            const isAdmin = role === 'ADMIN' || role === 'ROLE_ADMIN';
+            
             for (const book of books) {
                 let title = '', author = '';
                 if (book.bookId) {
@@ -180,6 +209,12 @@
                 }
                 const tr = document.createElement('tr');
                 tr.innerHTML = `<td>${title}</td><td>${author}</td><td>${book.bookId || ''}</td><td>${book.createdBy || ''}</td><td>${book.createdAt || ''}</td><td>${book.type || ''}</td><td>${book.status || ''}</td><td>${book.displayOrder || ''}</td>`;
+                
+                // 클릭 가능 조건: 관리자 권한 + MONTHLY_ADMIN_PICK + ACTIVE
+                if (isAdmin && book.type === 'MONTHLY_ADMIN_PICK' && book.status === 'ACTIVE') {
+                    tr.style.cursor = 'pointer';
+                    tr.onclick = () => onDeactivateBook(book.id, title);
+                }
                 tbody.appendChild(tr);
             }
         }
@@ -221,22 +256,98 @@
             const token = localStorage.getItem('accessToken');
             if (!selectedBookId) return;
             try {
-                await fetch('/admin/recommended-books', {
+                const response = await fetch('/admin/recommended-books', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({ bookId: selectedBookId, type: 'MONTHLY_ADMIN_PICK' })
+                    body: JSON.stringify({ 
+                        bookId: selectedBookId, 
+                        type: 'MONTHLY_ADMIN_PICK',
+                        status: 'ACTIVE'
+                    })
                 });
+                
+                if (!response.ok) {
+                    // 서버에서 에러 응답이 온 경우
+                    const errorData = await response.text();
+                    let errorMessage = '추천 등록에 실패했습니다.';
+                    
+                    // JSON 형태의 에러 메시지인지 확인
+                    try {
+                        const errorJson = JSON.parse(errorData);
+                        errorMessage = errorJson.message || errorJson.error || errorMessage;
+                    } catch {
+                        // 일반 텍스트 에러 메시지인 경우
+                        errorMessage = errorData || errorMessage;
+                    }
+                    
+                    document.getElementById('modal').style.display = 'none';
+                    alert(errorMessage);
+                    return;
+                }
+                
                 document.getElementById('modal').style.display = 'none';
                 fetchRecommendedBooks('admin');
+                alert('추천 도서가 성공적으로 등록되었습니다.');
             } catch (e) {
                 alert('추천 등록 실패: ' + e.message);
             }
         };
         document.getElementById('modalCancelBtn').onclick = function() {
             document.getElementById('modal').style.display = 'none';
+        };
+        // 기존 추천 등록용 모달과 분리된 비활성화용 함수
+        function onDeactivateBook(recommendedBookId, bookTitle) {
+            selectedBookId = recommendedBookId;
+            selectedBookTitle = bookTitle;
+            document.getElementById('deactivateModalText').textContent = `"${bookTitle}"을(를) 비활성화하시겠습니까?`;
+            document.getElementById('deactivateModalConfirmBtn').onclick = async function() {
+                const token = localStorage.getItem('accessToken');
+                if (!selectedBookId) return;
+                try {
+                    const response = await fetch(`/admin/recommended-books/${selectedBookId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ status: 'INACTIVE' })
+                    });
+                    
+                    if (!response.ok) {
+                        // 서버에서 에러 응답이 온 경우
+                        const errorData = await response.text();
+                        let errorMessage = '비활성화에 실패했습니다.';
+                        
+                        // JSON 형태의 에러 메시지인지 확인
+                        try {
+                            const errorJson = JSON.parse(errorData);
+                            errorMessage = errorJson.message || errorJson.error || errorMessage;
+                        } catch {
+                            // 일반 텍스트 에러 메시지인 경우
+                            errorMessage = errorData || errorMessage;
+                        }
+                        
+                        document.getElementById('deactivateModal').style.display = 'none';
+                        alert(errorMessage);
+                        return;
+                    }
+                    
+                    document.getElementById('deactivateModal').style.display = 'none';
+                    fetchRecommendedBooks('admin');
+                    alert('추천 도서가 성공적으로 비활성화되었습니다.');
+                } catch (e) {
+                    alert('비활성화 실패: ' + e.message);
+                }
+            };
+            document.getElementById('deactivateModal').style.display = 'block';
+        }
+        
+        // 비활성화 모달 취소 버튼
+        document.getElementById('deactivateModalCancelBtn').onclick = function() {
+            document.getElementById('deactivateModal').style.display = 'none';
         };
         // 진입 시 권한 분기 및 데이터 로드
         window.addEventListener('DOMContentLoaded', () => {
