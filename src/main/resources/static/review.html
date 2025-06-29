@@ -133,7 +133,10 @@
                 <div id="reviewPagination" style="margin-top:12px;"></div>`;
             area.innerHTML = html;
             if (isLoggedIn) {
-                document.getElementById('addReviewForm').addEventListener('submit', submitReviewForm);
+                const form = document.getElementById('addReviewForm');
+                if (form) {
+                    form.addEventListener('submit', submitReviewForm);
+                }
             }
             fetchReviewsPaged(selectedBook.id, 1);
         }
