@@ -21,37 +21,126 @@
     </style>
 </head>
 <body>
+    <div style="position: absolute; top: 20px; right: 30px; z-index: 100;">
+        <button onclick="location.href='/main.html'">홈 화면으로 이동</button>
+    </div>
     <div class="container">
-        <h1>리뷰 관리</h1>
-        <form id="addReviewForm">
-            <div class="form-group">
-                <label for="bookId">도서 ID:</label>
-                <input type="number" id="bookId" required>
-            </div>
-            <div class="form-group">
-                <label for="content">리뷰 내용:</label>
-                <textarea id="content" required></textarea>
-            </div>
-            <button type="submit">리뷰 등록</button>
-        </form>
-        <div id="addReviewResponse" class="response"></div>
-        <hr>
-        <h2>리뷰 목록 조회</h2>
-        <form id="fetchReviewsForm">
-            <div class="form-group">
-                <label for="fetchBookId">도서 ID:</label>
-                <input type="number" id="fetchBookId" required>
-            </div>
-            <button type="submit">리뷰 조회</button>
-        </form>
-        <div id="fetchReviewsResponse" class="response"></div>
-        <div id="reviewList" class="review-list"></div>
+<!--        <h1 id="reviewManageTitle" style="display:none;">리뷰 관리</h1>-->
+        <h2>도서 목록</h2>
+        <div id="bookListArea"></div>
+        <div id="bookPagination" style="margin-top:12px;"></div>
+        <div id="selectedBookArea" style="margin-top:24px;"></div>
     </div>
     <script>
+        // 권한 판별 함수
+        function getRoleFromToken(token) {
+            if (!token) return null;
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                return payload.role || payload.auth || null;
+            } catch (e) { return null; }
+        }
+
+        let selectedBook = null;
+        let isAdmin = false;
+        let isLoggedIn = false;
+        let bookPage = 1;
+        let bookTotalPages = 1;
+
+        // 도서 목록 불러오기 및 렌더링
+        async function fetchAndRenderBookList(page = 1) {
+            try {
+                const res = await fetch(`/books/search?title=&author=&page=${page}&size=10`);
+                const data = await res.json();
+                const books = data.content || data.data || data || [];
+                bookTotalPages = data.totalPages || 1;
+                bookPage = page;
+                renderBookList(books);
+                renderBookPagination();
+            } catch (e) {
+                document.getElementById('bookListArea').innerHTML = '<div class="error response">도서 목록을 불러오지 못했습니다.</div>';
+                document.getElementById('bookPagination').innerHTML = '';
+            }
+        }
+
+        function renderBookList(books) {
+            if (!books || books.length === 0) {
+                document.getElementById('bookListArea').innerHTML = '<div>도서가 없습니다.</div>';
+                document.getElementById('bookPagination').innerHTML = '';
+                return;
+            }
+            let html = `<table style='width:100%; margin-top:16px; border-collapse:collapse;'>
+                <thead><tr><th>도서명</th><th>저자</th><th>가격</th></tr></thead><tbody>`;
+            books.forEach(book => {
+                html += `<tr id="book-row-${book.id}" onclick="selectBook(${book.id}, '${book.title.replace(/'/g, "&#39;")}', '${book.author.replace(/'/g, "&#39;")}', ${book.price})">
+                    <td>${book.title}</td>
+                    <td>${book.author}</td>
+                    <td>${book.price ? book.price + '원' : '-'}</td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            document.getElementById('bookListArea').innerHTML = html;
+        }
+
+        function renderBookPagination() {
+            const pagDiv = document.getElementById('bookPagination');
+            let html = '';
+            if (bookTotalPages > 1) {
+                html += `<button onclick="goToBookPage(${bookPage-1})" ${bookPage===1?'disabled':''}>이전</button> `;
+                html += `<span> ${bookPage} / ${bookTotalPages} </span>`;
+                html += `<button onclick="goToBookPage(${bookPage+1})" ${bookPage===bookTotalPages?'disabled':''}>다음</button>`;
+            }
+            pagDiv.innerHTML = html;
+        }
+        window.goToBookPage = function(page) {
+            if (page < 1 || page > bookTotalPages) return;
+            fetchAndRenderBookList(page);
+        }
+
+        // 도서 선택 시 호출
+        window.selectBook = function(bookId, title, author, price) {
+            selectedBook = { id: bookId, title, author, price };
+            // 모든 행 배경색 초기화
+            document.querySelectorAll('#bookListArea tr').forEach(tr => {
+                tr.style.backgroundColor = '';
+            });
+            // 선택된 행만 하이라이트
+            const row = document.getElementById(`book-row-${bookId}`);
+            if (row) row.style.backgroundColor = '#e6f7ff';
+            renderSelectedBookArea();
+        }
+
+        // 선택된 도서 영역 렌더링
+        function renderSelectedBookArea() {
+            const area = document.getElementById('selectedBookArea');
+            if (!selectedBook) {
+                area.innerHTML = '';
+                return;
+            }
+            let html = `<h3>선택 도서: ${selectedBook.title} (${selectedBook.author})</h3>`;
+            if (isLoggedIn) {
+                html += `<form id="addReviewForm">
+                    <div class="form-group">
+                        <label for="content">리뷰 내용:</label>
+                        <textarea id="content" required></textarea>
+                    </div>
+                    <button type="submit">리뷰 등록</button>
+                </form>
+                <div id="addReviewResponse" class="response"></div>`;
+            }
+            html += `<div id="fetchReviewsResponse" class="response"></div>
+                <div id="reviewList" class="review-list"></div>
+                <div id="reviewPagination" style="margin-top:12px;"></div>`;
+            area.innerHTML = html;
+            if (isLoggedIn) {
+                document.getElementById('addReviewForm').addEventListener('submit', submitReviewForm);
+            }
+            fetchReviewsPaged(selectedBook.id, 1);
+        }
+
         // 리뷰 등록
-        document.getElementById('addReviewForm').addEventListener('submit', async (e) => {
+        async function submitReviewForm(e) {
             e.preventDefault();
-            const bookId = document.getElementById('bookId').value;
             const content = document.getElementById('content').value;
             const responseDiv = document.getElementById('addReviewResponse');
             const token = localStorage.getItem('accessToken');
@@ -62,12 +151,13 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({ bookId, content })
+                    body: JSON.stringify({ bookId: selectedBook.id, content })
                 });
                 const data = await response.json();
                 if (response.ok) {
                     responseDiv.className = 'response success';
                     responseDiv.textContent = '리뷰가 등록되었습니다.';
+                    fetchReviewsPaged(selectedBook.id, 1);
                 } else {
                     responseDiv.className = 'response error';
                     responseDiv.textContent = data.message || '리뷰 등록 실패';
@@ -76,41 +166,64 @@
                 responseDiv.className = 'response error';
                 responseDiv.textContent = '오류: ' + error.message;
             }
-        });
-        // 리뷰 조회
-        document.getElementById('fetchReviewsForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const bookId = document.getElementById('fetchBookId').value;
+        }
+
+        // 리뷰 조회 및 렌더링 (페이징 포함)
+        let reviewPage = 1;
+        let reviewTotalPages = 1;
+        function renderReviewPagination() {
+            const pagDiv = document.getElementById('reviewPagination');
+            if (!pagDiv) return;
+            let html = '';
+            if (reviewTotalPages > 1) {
+                html += `<button onclick="goToReviewPage(${reviewPage-1})" ${reviewPage===1?'disabled':''}>이전</button> `;
+                html += `<span> ${reviewPage} / ${reviewTotalPages} </span>`;
+                html += `<button onclick="goToReviewPage(${reviewPage+1})" ${reviewPage===reviewTotalPages?'disabled':''}>다음</button>`;
+            }
+            pagDiv.innerHTML = html;
+        }
+        window.goToReviewPage = function(page) {
+            if (page < 1 || page > reviewTotalPages) return;
+            fetchReviewsPaged(selectedBook.id, page);
+        }
+        async function fetchReviewsPaged(bookId, page = 1, size = 10) {
             const responseDiv = document.getElementById('fetchReviewsResponse');
             try {
-                const response = await fetch(`/reviews?bookId=${bookId}`);
-                const reviews = await response.json();
-                if (response.ok) {
+                const res = await fetch(`/reviews/search?bookId=${bookId}&page=${page-1}&size=${size}`);
+                const data = await res.json();
+                if (res.ok) {
+                    const reviews = data.content || [];
+                    reviewTotalPages = data.totalPages || 1;
+                    reviewPage = page;
                     responseDiv.className = 'response success';
-                    responseDiv.textContent = `리뷰 ${reviews.length}건`;
+                    responseDiv.textContent = `리뷰 ${data.totalElements || reviews.length}건`;
                     renderReviewList(reviews);
+                    renderReviewPagination();
                 } else {
                     responseDiv.className = 'response error';
-                    responseDiv.textContent = reviews.message || '리뷰 조회 실패';
+                    responseDiv.textContent = data.message || '리뷰 조회 실패';
                 }
             } catch (error) {
                 responseDiv.className = 'response error';
                 responseDiv.textContent = '오류: ' + error.message;
             }
-        });
-        // 리뷰 목록 렌더링
+        }
         function renderReviewList(reviews) {
             const listDiv = document.getElementById('reviewList');
             listDiv.innerHTML = '';
             reviews.forEach(review => {
                 const div = document.createElement('div');
                 div.className = 'review-item';
-                div.innerHTML = `<strong>리뷰 ID:</strong> ${review.id} <br> <strong>내용:</strong> ${review.content} <br> <button onclick="deleteReview(${review.id})">삭제</button>`;
+                let html = `<strong>리뷰 ID:</strong> ${review.id} <br> <strong>내용:</strong> ${review.content}`;
+                if (isAdmin) {
+                    html += ` <br> <button onclick="deleteReview(${review.id})">삭제</button>`;
+                }
+                div.innerHTML = html;
                 listDiv.appendChild(div);
             });
         }
-        // 리뷰 삭제
-        async function deleteReview(reviewId) {
+        // 리뷰 삭제 (관리자만)
+        window.deleteReview = async function(reviewId) {
             const token = localStorage.getItem('accessToken');
             if (!confirm('정말 삭제하시겠습니까?')) return;
             try {
@@ -122,7 +235,7 @@
                 });
                 if (response.ok) {
                     alert('리뷰가 삭제되었습니다.');
-                    document.getElementById('fetchReviewsForm').dispatchEvent(new Event('submit'));
+                    fetchReviewsPaged(selectedBook.id, 1);
                 } else {
                     alert('리뷰 삭제 실패');
                 }
@@ -130,6 +243,15 @@
                 alert('오류: ' + error.message);
             }
         }
+
+        // 진입 시 권한 분기 및 데이터 로드
+        window.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('accessToken');
+            isLoggedIn = !!token;
+            const role = getRoleFromToken(token);
+            isAdmin = (role === 'ADMIN' || role === 'ROLE_ADMIN');
+            fetchAndRenderBookList(1);
+        });
     </script>
 </body>
 </html> 
