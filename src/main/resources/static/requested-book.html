@@ -25,6 +25,9 @@
     </style>
 </head>
 <body>
+    <div style="position: absolute; top: 20px; right: 30px; z-index: 100;">
+        <button onclick="location.href='/main.html'">홈 화면으로 이동</button>
+    </div>
     <div class="container">
         <div class="top-half">
             <h2>희망 도서 목록</h2>
@@ -94,56 +97,113 @@
                 } catch (e) {}
             }
             books.forEach(book => {
+                let statusText = '';
+                if (book.status === 'PENDING') statusText = '신청됨';
+                else if (book.status === 'REJECTED') statusText = '반려';
+                else if (book.status === 'COMPLETED') statusText = '승인';
+                else statusText = book.status || '';
                 const tr = document.createElement('tr');
-                tr.innerHTML = `<td>${book.title}</td><td>${book.author}</td><td>${book.publisher}</td><td>${book.isbn || ''}</td><td>${book.status || ''}</td>`;
+                tr.innerHTML = `<td>${book.title}</td><td>${book.author}</td><td>${book.publisher}</td><td>${book.isbn || ''}</td><td>${statusText}</td>`;
                 if (role === 'ADMIN' || role === 'ROLE_ADMIN') {
-                    tr.style.cursor = 'pointer';
-                    tr.onclick = () => {
-                        localStorage.setItem('addBookPrefill', JSON.stringify({
-                            title: book.title,
-                            author: book.author,
-                            publisher: book.publisher,
-                            isbn: book.isbn
-                        }));
-                        window.location.href = '/book.html';
-                    };
+                    if (book.status === 'PENDING') {
+                        tr.style.cursor = 'pointer';
+                        tr.onclick = () => {
+                            localStorage.setItem('addBookPrefill', JSON.stringify({
+                                title: book.title,
+                                author: book.author,
+                                publisher: book.publisher,
+                                isbn: book.isbn
+                            }));
+                            window.location.href = '/book.html';
+                        };
+                    } else {
+                        tr.style.cursor = 'default';
+                        tr.onclick = null;
+                    }
                 }
                 tbody.appendChild(tr);
             });
         }
         window.addEventListener('DOMContentLoaded', () => {
             fetchRequestedBooks();
-        });
-        document.getElementById('requestForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const title = document.getElementById('title').value;
-            const author = document.getElementById('author').value;
-            const publisher = document.getElementById('publisher').value;
-            const isbn = document.getElementById('isbn').value;
-            const responseDiv = document.getElementById('requestResponse');
+
+            // 로그인 여부 확인
             const token = localStorage.getItem('accessToken');
-            try {
-                const response = await fetch('/requested-books', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ title, author, publisher, isbn })
+            const isLoggedIn = !!token;
+            const bottomHalf = document.querySelector('.bottom-half');
+            if (isLoggedIn) {
+                // 기존 폼 그대로 노출
+                bottomHalf.innerHTML = `
+                    <h1>희망 도서 신청</h1>
+                    <form id="requestForm">
+                        <div class="form-group">
+                            <label for="title">도서명:</label>
+                            <input type="text" id="title" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="author">저자:</label>
+                            <input type="text" id="author" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="publisher">출판사:</label>
+                            <input type="text" id="publisher" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="isbn">고유번호:</label>
+                            <textarea id="isbn" required></textarea>
+                        </div>
+                        <button type="submit">신청하기</button>
+                    </form>
+                    <div id="requestResponse" class="response"></div>
+                `;
+                document.getElementById('requestForm').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const title = document.getElementById('title').value;
+                    const author = document.getElementById('author').value;
+                    const publisher = document.getElementById('publisher').value;
+                    const isbn = document.getElementById('isbn').value;
+                    const responseDiv = document.getElementById('requestResponse');
+                    const token = localStorage.getItem('accessToken');
+                    try {
+                        const response = await fetch('/requested-books', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ title, author, publisher, isbn })
+                        });
+                        if (response.ok) {
+                            responseDiv.className = 'response success';
+                            responseDiv.textContent = '희망 도서가 성공적으로 신청되었습니다!';
+                            fetchRequestedBooks(); // 신청 후 목록 갱신
+                        } else {
+                            responseDiv.className = 'response error';
+                            responseDiv.textContent = '신청에 실패했습니다.';
+                        }
+                    } catch (e) {
+                        responseDiv.className = 'response error';
+                        responseDiv.textContent = '오류: ' + e.message;
+                    }
                 });
-                if (response.ok) {
-                    responseDiv.className = 'response success';
-                    responseDiv.textContent = '희망 도서가 성공적으로 신청되었습니다!';
-                    fetchRequestedBooks(); // 신청 후 목록 갱신
-                } else {
-                    responseDiv.className = 'response error';
-                    responseDiv.textContent = '신청에 실패했습니다.';
-                }
-            } catch (e) {
-                responseDiv.className = 'response error';
-                responseDiv.textContent = '오류: ' + e.message;
+            } else {
+                // 로그인 안내 메시지와 버튼 노출
+                bottomHalf.innerHTML = `
+                    <h1>희망 도서 신청</h1>
+                    <div style="margin-top:16px; font-size:1.05em; margin-bottom:16px;">희망 도서를 신청하려면 로그인하세요</div>
+                    <button id="loginBtn" style="margin-left:2px;">로그인</button>
+                `;
+                document.getElementById('loginBtn').onclick = goToLogin;
             }
         });
+
+        // goToLogin 함수가 없으면 추가
+        if (typeof goToLogin !== 'function') {
+            function goToLogin() {
+                localStorage.setItem('returnUrl', window.location.href);
+                window.location.href = '/index.html';
+            }
+        }
     </script>
 </body>
 </html> 
