@@ -20,6 +20,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -60,7 +62,24 @@ public class RecommendedBookService {
                 .toList();
     }
 
-    // 추천 도서를 저장하는 메소드 (현재 관리자 전용)
+//    // 추천 도서를 저장하는 메소드 (현재 관리자 전용)
+//    public RecommendedBookDTO save(RecommendedBookDTO dto, Long userId) {
+//        // 로그인한 사용자 찾기
+//        User user = userRepository.findById(userId)
+//                .orElseThrow(() -> new UserNotFoundException(USER_NOT_FOUND));
+//
+//        // 추천 도서의 대상인 책 찾기
+//        Book book = bookRepository.findById(dto.getBookId())
+//                .orElseThrow(() -> new BookNotFoundException(BOOK_NOT_FOUND));
+//
+//        // 수정된 toEntity() 방법
+//        // DTO → Entity 변환  // 클라이언트에서 받아온 DTO정보에는 사용자 정보가 없으므로, 위에서 userId로 찾은 User를 설정해야 함.
+//        RecommendedBook requestedBook = dto.toEntity(user, book);
+//
+//        RecommendedBook saved = recommendedBookRepository.save(requestedBook); // RequestedBookDTO 형태로 받아온 데이터를 RequestedBook 엔티티로 변환하여 저장
+//        return RecommendedBookDTO.fromEntity(saved); // 저장한 결과값을 반환
+//    }
+
     public RecommendedBookDTO save(RecommendedBookDTO dto, Long userId) {
         // 로그인한 사용자 찾기
         User user = userRepository.findById(userId)
@@ -70,12 +89,23 @@ public class RecommendedBookService {
         Book book = bookRepository.findById(dto.getBookId())
                 .orElseThrow(() -> new BookNotFoundException(BOOK_NOT_FOUND));
 
-        // 수정된 toEntity() 방법
-        // DTO → Entity 변환  // 클라이언트에서 받아온 DTO정보에는 사용자 정보가 없으므로, 위에서 userId로 찾은 User를 설정해야 함.
-        RecommendedBook requestedBook = dto.toEntity(user, book);
+        //  같은 달 + 같은 책 + MONTHLY_ADMIN_PICK 타입의 추천 도서 중복 체크
+        YearMonth currentMonth = YearMonth.now();
+        boolean exists = recommendedBookRepository.existsByBookAndTypeAndCreatedAtBetween(
+                book,
+                RecommendedBook.Type.MONTHLY_ADMIN_PICK,
+                currentMonth.atDay(1).atStartOfDay(),
+                currentMonth.atEndOfMonth().atTime(LocalTime.MAX)
+        );
 
-        RecommendedBook saved = recommendedBookRepository.save(requestedBook); // RequestedBookDTO 형태로 받아온 데이터를 RequestedBook 엔티티로 변환하여 저장
-        return RecommendedBookDTO.fromEntity(saved); // 저장한 결과값을 반환
+        if (exists) {
+            throw new IllegalStateException("이번 달에 이미 해당 책이 같은 타입으로 추천 도서로 등록되어 있습니다.");
+        }
+
+        // 등록 진행
+        RecommendedBook entity = dto.toEntity(user, book);
+        RecommendedBook saved = recommendedBookRepository.save(entity);
+        return RecommendedBookDTO.fromEntity(saved);
     }
 
     // 추천 도서를 수정하는 메소드 (현재 관리자 전용)
