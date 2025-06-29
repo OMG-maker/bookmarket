@@ -59,6 +59,9 @@
     </style>
 </head>
 <body>
+    <div style="position: absolute; top: 20px; right: 30px; z-index: 100;">
+        <button onclick="location.href='/main.html'">홈 화면으로 이동</button>
+    </div>
     <div class="container">
         <h1>북마켓</h1>
         
@@ -125,8 +128,14 @@
                     localStorage.setItem('accessToken', data.accessToken);
                     localStorage.setItem('refreshToken', data.refreshToken);
                     localStorage.setItem('userEmail', email);
-                    // 메인 페이지로 이동
-                    window.location.href = '/main.html';
+                    // 원래 페이지로 이동 또는 메인 페이지로 이동
+                    const returnUrl = localStorage.getItem('returnUrl');
+                    if (returnUrl) {
+                        localStorage.removeItem('returnUrl');
+                        window.location.href = returnUrl;
+                    } else {
+                        window.location.href = '/main.html';
+                    }
                 } else {
                     responseDiv.className = 'response error';
                     responseDiv.textContent = data.message || '로그인 실패';
