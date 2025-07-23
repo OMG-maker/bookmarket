@@ -1,5 +1,7 @@
 package com.example.bookmarket.common;
 
+import com.example.bookmarket.auth.dto.LoginRequestDTO;
+import com.example.bookmarket.auth.dto.SignupRequestDto;
 import com.example.bookmarket.auth.exception.*;
 import com.example.bookmarket.book.exception.BookAlreadyExistsException;
 import com.example.bookmarket.book.exception.BookNotFoundException;
@@ -14,12 +16,17 @@ import com.example.bookmarket.user.exception.UserAlreadyExistsException;
 import com.example.bookmarket.user.exception.UserNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -126,5 +133,111 @@ public class GlobalExceptionHandler {
         body.put("error", status.getReasonPhrase());
         body.put("message", message);
         return new ResponseEntity<>(body, status);
+    }
+
+    //
+
+//    @ExceptionHandler(MethodArgumentNotValidException.class)
+//    public ResponseEntity<?> handleValidationExceptions(MethodArgumentNotValidException ex) {
+//        Map<String, String> errors = new HashMap<>();
+//        for (FieldError error : ex.getBindingResult().getFieldErrors()) {
+//            errors.put(error.getField(), error.getDefaultMessage());
+//        }
+//
+//        // 첫 번째 에러 메시지 가져오기
+//        String firstErrorMessage = ex.getBindingResult().getFieldErrors().stream()
+//                .findFirst()
+//                .map(FieldError::getDefaultMessage)
+//                .orElse("Validation failed");
+//
+//        Map<String, Object> body = new HashMap<>();
+//        body.put("timestamp", LocalDateTime.now());
+//        body.put("status", HttpStatus.BAD_REQUEST.value());
+//        body.put("error", HttpStatus.BAD_REQUEST.getReasonPhrase());
+//        body.put("message", firstErrorMessage);  // 첫 에러 메시지로 대체
+//        body.put("errors", errors);
+//
+//        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+//    }
+
+//    @ExceptionHandler(MethodArgumentNotValidException.class)
+//    public ResponseEntity<?> handleValidationExceptions(MethodArgumentNotValidException ex) {
+//        Map<String, String> errors = new HashMap<>();
+//        for (FieldError error : ex.getBindingResult().getFieldErrors()) {
+//            errors.put(error.getField(), error.getDefaultMessage());
+//        }
+//
+//        // 필드별 우선순위 지정
+//        List<String> priorityOrder = List.of("email", "password", "username");
+//
+//        List<String> sortedMessages = new ArrayList<>();
+//
+//        // 우선순위 필드부터 메시지 추가
+//        for (String field : priorityOrder) {
+//            if (errors.containsKey(field)) {
+//                sortedMessages.add(errors.get(field));
+//                errors.remove(field);
+//            }
+//        }
+//        // 우선순위에 없는 필드 메시지는 뒤에 추가
+//        sortedMessages.addAll(errors.values());
+//
+//        // 첫 번째 메시지만 대표 메시지로 사용
+//        String message = sortedMessages.isEmpty() ? "알 수 없는 오류가 발생했습니다." : sortedMessages.get(0);
+//
+//        Map<String, Object> body = new HashMap<>();
+//        body.put("timestamp", LocalDateTime.now());
+//        body.put("status", HttpStatus.BAD_REQUEST.value());
+//        body.put("error", HttpStatus.BAD_REQUEST.getReasonPhrase());
+//        body.put("message", message);
+//        // 모든 필드별 에러는 별도로 담아줌
+//        body.put("errors", ex.getBindingResult().getFieldErrors().stream()
+//                .collect(Collectors.toMap(FieldError::getField, FieldError::getDefaultMessage)));
+//
+//        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+//    }
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<?> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        Object target = ex.getBindingResult().getTarget();
+
+        Map<String, String> errors = new HashMap<>();
+        for (FieldError error : ex.getBindingResult().getFieldErrors()) {
+            errors.put(error.getField(), error.getDefaultMessage());
+        }
+
+        List<String> priorityOrder;
+
+        // DTO별 우선순위 지정
+        if (target instanceof LoginRequestDTO) {
+            priorityOrder = List.of("email", "password");
+        } else if (target instanceof SignupRequestDto) {
+            priorityOrder = List.of("email", "username", "password");
+        } else {
+            // 기타 DTO는 기본 우선순위
+            priorityOrder = new ArrayList<>(errors.keySet());
+        }
+
+        List<String> sortedMessages = new ArrayList<>();
+        for (String field : priorityOrder) {
+            if (errors.containsKey(field)) {
+                sortedMessages.add(errors.get(field));
+                errors.remove(field);
+            }
+        }
+        // 남은 메시지 추가
+        sortedMessages.addAll(errors.values());
+
+        // 첫 번째 메시지만 대표 메시지로 사용
+        String message = sortedMessages.isEmpty() ? "유효성 검사 오류가 발생했습니다." : sortedMessages.get(0);
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.BAD_REQUEST.value());
+        body.put("error", HttpStatus.BAD_REQUEST.getReasonPhrase());
+        body.put("message", message);
+        body.put("errors", ex.getBindingResult().getFieldErrors().stream()
+                .collect(Collectors.toMap(FieldError::getField, FieldError::getDefaultMessage)));
+
+        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
     }
 }

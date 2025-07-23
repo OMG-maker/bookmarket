@@ -49,7 +49,7 @@ public class AuthController {
      * @return 로그인 응답 DTO
      */
     @PostMapping("/login")
-    public ResponseEntity<AuthResponseDTO> login(@RequestBody LoginRequestDTO loginRequest) {
+    public ResponseEntity<AuthResponseDTO> login(@RequestBody @Valid LoginRequestDTO loginRequest) {
         AuthResponseDTO response = authService.login(loginRequest); // 로그인 서비스 호출
         return ResponseEntity.ok(response); // HTTP 200 OK 응답으로 반환
     }
